@@ -46,7 +46,7 @@ export async function summarizeForVideo(
     const text = resp.data?.choices?.[0]?.message?.content;
     return text || "";
   } catch (err) {
-    console.warn("LLM summarization failed:", err?.message || err);
+    console.warn("LLM summarization failed:", (err as any)?.message || err);
     return "";
   }
 }
