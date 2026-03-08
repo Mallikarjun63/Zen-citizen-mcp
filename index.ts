@@ -234,11 +234,15 @@ server.tool(
     description: "🇮🇳 India-specific research agent for government services - analyzes YouTube videos for sentiment, credibility, and actionable insights from Indian sources (Twitter optional)",
     schema: z.object({
       query: z.string().describe("Indian government service query (e.g., 'How do I get 10th marks card if I lost it?', 'How to apply for PAN card')"),
+      instructions: z.string().optional().describe("Optional instructions to guide the GPT summarization and response formatting"),
     }),
   },
-  async ({ query }) => {
+  async ({ query, instructions }) => {
     try {
-      const result = await researchGovernmentQuery(query);
+      const DEFAULT_INSTRUCTIONS = `Respond in Markdown with these sections:\n\n## Summary — one paragraph\n\n## Top Videos — numbered list: title, url, 1‑sent summary, top 2 comments\n\n## Key Points — bullet list of top 5 takeaways\n\n## Actions — 3 concrete next steps with links\n\nDo not include extraneous commentary.`;
+
+      const effectiveInstructions = (instructions as string | undefined) || DEFAULT_INSTRUCTIONS;
+      const result = await researchGovernmentQuery(query, effectiveInstructions);
 
       // Format for ChatGPT consumption
       const formattedResult = {
@@ -261,6 +265,8 @@ server.tool(
           url: r.url,
           type: r.type,
           credibility: r.credibility.overall,
+          summary: r.metadata?.summary || undefined,
+          topComments: (r.opinions || []).slice(0, 3).map((o: any) => ({ text: o.text, sentiment: o.sentiment, likes: o.likes })),
         })),
         recommendedActions: result.recommendedActions,
       };

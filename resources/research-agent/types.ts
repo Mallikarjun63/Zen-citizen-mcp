@@ -52,6 +52,7 @@ export interface ResearchResource {
     views?: number;
     likes?: number;
     comments?: number;
+    summary?: string;
   };
 }
 

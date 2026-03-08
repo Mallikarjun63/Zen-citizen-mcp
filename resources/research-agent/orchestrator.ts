@@ -30,8 +30,9 @@ export function processYouTubeResults(results: YouTubeResults): ResearchResource
     const opinions: Opinion[] = [];
     const allKeyPoints: { text: string; sources: Set<string> }[] = [];
 
-    // Process comments into opinions
-    for (const comment of results.comments) {
+    // Process comments for this specific video into opinions
+    const commentsForVideo = results.commentsByVideo?.[video.id] || [];
+    for (const comment of commentsForVideo) {
       const sentiment = classifySentiment(comment.textDisplay);
       const helpfulness = calculateHelpfulnessScore(
         comment.textDisplay,
@@ -77,11 +78,12 @@ export function processYouTubeResults(results: YouTubeResults): ResearchResource
       .sort((a, b) => b.frequency - a.frequency);
 
     // Calculate credibility metrics
+    const videoCommentsCount = results.commentsByVideo?.[video.id]?.length || 0;
     const credibility = calculateCredibility({
       type: "video",
       likes: 0,
       views: 0,
-      comments: results.comments.length,
+      comments: videoCommentsCount,
       timestamp: video.publishedAt,
       source: "official" // YouTube videos from official channels are more credible
     });
@@ -98,7 +100,7 @@ export function processYouTubeResults(results: YouTubeResults): ResearchResource
         channelName: video.channelTitle,
         author: video.channelTitle,
         publishDate: video.publishedAt,
-        comments: results.comments.length || 0,
+        comments: videoCommentsCount || 0,
       },
     };
 

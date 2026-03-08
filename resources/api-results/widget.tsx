@@ -38,6 +38,11 @@ const ApiResultsWidget: React.FC = () => {
   }
 
   const { youtubeResults, twitterResults, query } = props;
+  const aggregatedComments = youtubeResults
+    ? (youtubeResults.comments && youtubeResults.comments.length > 0
+        ? youtubeResults.comments
+        : Object.values(youtubeResults.commentsByVideo || {}).flat())
+    : [];
 
   return (
     <div className={`${bgColor} ${textColor} rounded-lg overflow-hidden`}>
@@ -143,18 +148,16 @@ const ApiResultsWidget: React.FC = () => {
             </div>
 
             {/* Comments */}
-            {youtubeResults.comments.length > 0 && (
+            {aggregatedComments.length > 0 && (
               <div>
                 <h4 className="font-semibold mb-3 text-slate-400">
-                  Top Comments ({youtubeResults.comments.length})
+                  Top Comments ({aggregatedComments.length})
                 </h4>
                 <div className="space-y-3">
-                  {youtubeResults.comments.map((comment) => (
+                  {aggregatedComments.map((comment) => (
                     <div
                       key={comment.id}
-                      className={`p-3 rounded-lg ${
-                        isDark ? "bg-slate-800" : "bg-slate-100"
-                      }`}
+                      className={`p-3 rounded-lg ${isDark ? "bg-slate-800" : "bg-slate-100"}`}
                     >
                       <div className="flex gap-2 items-start mb-2">
                         {comment.authorProfileImageUrl && (

@@ -2,6 +2,7 @@ import axios from "axios";
 import type { YouTubeResults, TwitterResults, YouTubeVideo, YouTubeComment, TwitterTweet } from "./resources/api-results/types.js";
 import type { ResearchQueryResult } from "./resources/research-agent/types.js";
 import { processYouTubeResults, processTwitterResults, compileResearchResult } from "./resources/research-agent/orchestrator.js";
+import { summarizeForVideo } from "./resources/research-agent/llm.js";
 
 /**
  * YouTube API Helper
@@ -38,21 +39,23 @@ export async function searchYouTube(query: string): Promise<YouTubeResults> {
       url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
     }));
 
-    // Fetch comments for the top video
-    let comments: YouTubeComment[] = [];
-    if (videos.length > 0) {
+    // Fetch comments for each video (top 3 comments per video), build commentsByVideo map and aggregated comments list
+    const commentsByVideo: Record<string, YouTubeComment[]> = {};
+    const aggregatedComments: YouTubeComment[] = [];
+
+    for (const video of videos) {
       try {
         const commentsResponse = await axios.get("https://www.googleapis.com/youtube/v3/commentThreads", {
           params: {
-            videoId: videos[0].id,
+            videoId: video.id,
             key: apiKey,
             part: "snippet",
-            maxResults: 5,
+            maxResults: 3,
             textFormat: "plainText",
           },
         });
 
-        comments = commentsResponse.data.items
+        const videoComments: YouTubeComment[] = (commentsResponse.data.items || [])
           .map((thread: any) => {
             const comment = thread.snippet.topLevelComment.snippet;
             return {
@@ -62,17 +65,23 @@ export async function searchYouTube(query: string): Promise<YouTubeResults> {
               likeCount: comment.likeCount,
               publishedAt: comment.publishedAt,
               authorProfileImageUrl: comment.authorProfileImageUrl,
+              videoId: video.id,
             };
           })
-          .slice(0, 5);
+          .slice(0, 3);
+
+        commentsByVideo[video.id] = videoComments;
+        aggregatedComments.push(...videoComments);
       } catch (error) {
-        console.warn("Could not fetch comments:", error);
+        console.warn(`Could not fetch comments for video ${video.id}:`, (error as any)?.message || error);
+        commentsByVideo[video.id] = [];
       }
     }
 
     return {
       videos,
-      comments,
+      comments: aggregatedComments,
+      commentsByVideo,
       query,
     };
   } catch (error) {
@@ -179,7 +188,7 @@ export async function searchBothPlatforms(query: string): Promise<{
  * Searches only for India-specific content and resources
  * Provides curated insights with sentiment analysis and credibility scoring
  */
-export async function researchGovernmentQuery(query: string): Promise<ResearchQueryResult> {
+export async function researchGovernmentQuery(query: string, instructions?: string): Promise<ResearchQueryResult> {
   try {
     console.log(`[Research Agent - India] Processing query: "${query}"`);
 
@@ -201,6 +210,26 @@ export async function researchGovernmentQuery(query: string): Promise<ResearchQu
     console.log(
       `[Research Agent] Processed ${youtubeResources.length} YouTube resources${twitter ? ` and ${twitterResources.length} Twitter resources` : " (Twitter unavailable)"}`
     );
+
+    // Attach LLM-generated summaries to YouTube resources (if OpenAI key is available)
+    if (youtube && youtubeResources.length > 0) {
+      for (const res of youtubeResources) {
+        try {
+          const video = youtube.videos.find((v) => v.id === res.id);
+          const commentsForVideo = youtube.commentsByVideo?.[res.id] || [];
+          const summary = await summarizeForVideo(
+            video?.title || res.title,
+            video?.description || "",
+            commentsForVideo,
+            instructions
+          );
+          if (!res.metadata) res.metadata = {} as any;
+          (res.metadata as any).summary = summary;
+        } catch (err) {
+          console.warn("Failed to summarize resource", res.id, (err as any)?.message || err);
+        }
+      }
+    }
 
     // Compile final research result
     const result = compileResearchResult(query, youtubeResources, twitterResources);

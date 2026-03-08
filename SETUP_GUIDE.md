@@ -32,6 +32,38 @@ YOUTUBE_API_KEY=YOUR_YOUTUBE_KEY_HERE
 TWITTER_BEARER_TOKEN=YOUR_TWITTER_TOKEN_HERE
 ```
 
+Optional: when connecting this MCP as a ChatGPT Connector, you can pass `instructions` to control how ChatGPT formats summaries. If you don't provide `instructions`, the server uses a default Structured Markdown template that returns: Summary, Top Videos (title/url/summary/top comments), Key Points, and Actions.
+
+Example `instructions` templates you can pass from ChatGPT when invoking the `research-government-query` tool:
+
+- Structured Markdown (default):
+```
+Respond in Markdown with these sections:
+
+## Summary — one paragraph
+
+## Top Videos — numbered list: title, url, 1‑sent summary, top 2 comments
+
+## Key Points — bullet list of top 5 takeaways
+
+## Actions — 3 concrete next steps with links
+
+Do not include extraneous commentary.
+```
+
+- JSON (programmatic):
+```
+Return only valid JSON with keys: {"query","summary","top_videos","top_key_points","recommended_actions","governmentService"}
+```
+
+When using the ChatGPT Connector (Developer mode):
+
+1. Settings → Connectors → Advanced → Enable Developer mode.
+2. Import this MCP server: `https://sparkling-king-bjlrd.run.mcp-use.com/mcp` (or your MCP URL).
+3. In ChatGPT, call the `research-government-query` tool and pass `query` and optional `instructions`.
+
+If `instructions` is omitted, the server will format results using the Structured Markdown default.
+
 ### Step 4: Start Development Server
 
 ```bash

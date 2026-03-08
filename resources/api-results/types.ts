@@ -17,6 +17,7 @@ export const YouTubeCommentSchema = z.object({
   authorDisplayName: z.string(),
   textDisplay: z.string(),
   likeCount: z.number(),
+  videoId: z.string().optional(),
   publishedAt: z.string(),
   authorProfileImageUrl: z.string().optional(),
 });
@@ -24,6 +25,7 @@ export const YouTubeCommentSchema = z.object({
 export const YouTubeResultsSchema = z.object({
   videos: z.array(YouTubeVideoSchema),
   comments: z.array(YouTubeCommentSchema),
+  commentsByVideo: z.record(z.string(), z.array(YouTubeCommentSchema)).optional(),
   query: z.string(),
 });
 
@@ -73,12 +75,14 @@ export type YouTubeComment = {
   textDisplay: string;
   likeCount: number;
   publishedAt: string;
+  videoId?: string;
   authorProfileImageUrl?: string;
 };
 
 export type YouTubeResults = {
   videos: YouTubeVideo[];
   comments: YouTubeComment[];
+  commentsByVideo?: Record<string, YouTubeComment[]>;
   query: string;
 };
 
