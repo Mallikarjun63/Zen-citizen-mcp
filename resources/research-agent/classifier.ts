@@ -1,4 +1,4 @@
-import type { SentimentType, SentimentScore } from "./types.js";
+import type { SentimentType, SentimentScore, CommentLabel } from "./types.js";
 
 /**
  * Sentiment Classifier for analyzing opinions and feedback
@@ -103,6 +103,82 @@ export function classifySentiment(text: string): SentimentScore {
     confidence,
     keywords,
   };
+}
+
+/**
+ * Classify a comment as either an `opinion` or `information`.
+ * Returns a simple label, confidence (0-100) and keywords that influenced the label.
+ */
+export function classifyComment(text: string): {
+  label: CommentLabel;
+  confidence: number;
+  keywords: string[];
+} {
+  const lower = text.toLowerCase();
+
+  const opinionPatterns = [
+    "i think", "i feel", "in my opinion", "imo", "i'm not sure", "i was", "i'd", "i've", "we should", "should", "recommend", "suggest", "best", "worst", "love", "hate", "agree", "disagree", "believe", "think", "feels", "feeling",
+  ];
+
+  const infoPatterns = [
+    "documents", "form", "apply", "application", "fee", "fees", "process", "required", "requirement", "upload", "download", "link", "official", "office", "address", "phone", "contact", "website", "id", "passport", "certificate", "birth", "date", "₹", "rupee", "days", "weeks", "months", "hours", "minutes",
+  ];
+
+  let opinionCount = 0;
+  let infoCount = 0;
+  const found: string[] = [];
+
+  for (const p of opinionPatterns) {
+    const re = new RegExp(`\\b${escapeRegex(p)}\\b`, "i");
+    if (re.test(lower)) {
+      opinionCount++;
+      found.push(p);
+    }
+  }
+
+  for (const p of infoPatterns) {
+    const re = new RegExp(`\\b${escapeRegex(p)}\\b`, "i");
+    if (re.test(lower)) {
+      infoCount++;
+      found.push(p);
+    }
+  }
+
+  // Heuristic: if informational keywords dominate, label as information; if opinion keywords dominate, label as opinion
+  let label: CommentLabel = "other";
+  let confidence = 50;
+
+  if (infoCount > opinionCount) {
+    label = "information";
+    confidence = Math.min(95, 50 + infoCount * 20);
+  } else if (opinionCount > infoCount) {
+    label = "opinion";
+    confidence = Math.min(95, 50 + opinionCount * 20);
+  } else if (infoCount === opinionCount && infoCount > 0) {
+    // both present — lean toward information if text contains numbers or currency
+    const hasNumber = /\d+/.test(lower) || /₹/.test(lower) || /rupee/.test(lower);
+    if (hasNumber) {
+      label = "information";
+      confidence = 70;
+    } else {
+      label = "opinion";
+      confidence = 60;
+    }
+  } else {
+    // no clear matches — try short heuristics: presence of verbs like 'apply' or 'submit' indicates information
+    if (/\b(apply|submit|required|documents|form)\b/i.test(lower)) {
+      label = "information";
+      confidence = 60;
+    } else if (/\b(i think|imo|in my opinion|i feel|i believe)\b/i.test(lower)) {
+      label = "opinion";
+      confidence = 60;
+    } else {
+      label = "other";
+      confidence = 50;
+    }
+  }
+
+  return { label, confidence, keywords: found.slice(0, 6) };
 }
 
 /**

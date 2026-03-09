@@ -17,8 +17,14 @@ export const widgetMetadata: WidgetMetadata = {
 };
 
 const ApiResultsWidget: React.FC = () => {
-  const { props, isPending, theme } = useWidget<CombinedResults>();
+  const { props, isPending, theme, callTool } = useWidget<CombinedResults>();
   const [activeTab, setActiveTab] = useState<"youtube" | "twitter" | "all">("all");
+  const [manualResults, setManualResults] = useState<CombinedResults | null>(null);
+  const [queryInput, setQueryInput] = useState<string>(props.query || "");
+  const [instructionsInput, setInstructionsInput] = useState<string>(
+    "Respond in Markdown with these sections:\n\n## Summary — one paragraph\n\n## Top Videos — numbered list: title, url, 1‑sent summary, top 2 comments\n\n## Key Points — bullet list of top 5 takeaways\n\n## Actions — 3 concrete next steps with links\n\nDo not include extraneous commentary."
+  );
+  const [running, setRunning] = useState(false);
 
   const isDark = theme === "dark";
   const bgColor = isDark ? "bg-slate-900" : "bg-white";
@@ -37,7 +43,8 @@ const ApiResultsWidget: React.FC = () => {
     );
   }
 
-  const { youtubeResults, twitterResults, query } = props;
+  const combined = manualResults || props;
+  const { youtubeResults, twitterResults, query } = combined;
   const aggregatedComments = youtubeResults
     ? (youtubeResults.comments && youtubeResults.comments.length > 0
         ? youtubeResults.comments
@@ -52,6 +59,47 @@ const ApiResultsWidget: React.FC = () => {
         <p className={`${isDark ? "text-slate-400" : "text-slate-600"}`}>
           Query: <span className="font-semibold">{query}</span>
         </p>
+        <div className="mt-4 flex gap-2">
+          <input
+            value={queryInput}
+            onChange={(e) => setQueryInput(e.target.value)}
+            placeholder="Enter query"
+            className="flex-1 p-2 rounded border"
+          />
+          <button
+            onClick={async () => {
+              if (!callTool) return;
+              setRunning(true);
+              try {
+                const res: any = await callTool("research-government-query", { query: queryInput, instructions: instructionsInput });
+                // The tool returns an object matching ResearchQueryResult; adapt to CombinedResults shape
+                const converted: CombinedResults = {
+                  query: res.query || queryInput,
+                  youtubeResults: res.resources
+                    ? { query: res.query || queryInput, videos: res.resources.filter((r: any) => r.type === "video").map((v: any) => ({ id: v.id, title: v.title, description: "", thumbnail: "", channelTitle: "", publishedAt: "", url: v.url })), comments: [], commentsByVideo: {} }
+                    : undefined,
+                };
+                setManualResults(converted as CombinedResults);
+              } catch (err) {
+                // noop
+              } finally {
+                setRunning(false);
+              }
+            }}
+            className={`px-4 py-2 rounded font-medium ${running ? "opacity-60" : "bg-blue-600 text-white hover:bg-blue-700"}`}
+            disabled={running}
+          >
+            {running ? "Running..." : "Run Research"}
+          </button>
+        </div>
+        <div className="mt-3">
+          <textarea
+            value={instructionsInput}
+            onChange={(e) => setInstructionsInput(e.target.value)}
+            className="w-full rounded border p-2 text-xs"
+            rows={3}
+          />
+        </div>
       </div>
 
       {/* Tabs */}

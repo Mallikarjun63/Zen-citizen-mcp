@@ -42,3 +42,14 @@ Thumbs.db
 *.swo
 *~
 
+
+
+502_QUICK_FIX.md	
+DEPLOYMENT_COMPLETE.md	
+DEPLOYMENT.md		
+SETUP_GUIDE.md
+DEPLOYMENT_502_FIX.md	
+DEPLOYMENT_SECRETS.md
+
+docs 
+test-api.ts

@@ -35,9 +35,9 @@ async function testResearchAgent() {
       }
 
       console.log(`\n📊 Opinion Distribution:`);
-      console.log(`   Helpful: ${result.opinionDistribution.helpful}%`);
-      console.log(`   Neutral: ${result.opinionDistribution.neutral}%`);
-      console.log(`   Unhelpful: ${result.opinionDistribution.unhelpful}%`);
+      console.log(`   Opinion: ${result.opinionDistribution.opinion}%`);
+      console.log(`   Information: ${result.opinionDistribution.information}%`);
+      console.log(`   Other: ${result.opinionDistribution.other}%`);
 
       console.log(`\n🎯 Credibility Score: ${result.averageCredibility}/100`);
 

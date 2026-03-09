@@ -231,11 +231,11 @@ export async function researchGovernmentQuery(query: string, instructions?: stri
       }
     }
 
-    // Compile final research result
-    const result = compileResearchResult(query, youtubeResources, twitterResources);
+    // Compile final research result (may enrich government service with official docs)
+    const result = await compileResearchResult(query, youtubeResources, twitterResources);
 
     console.log(
-      `[Research Agent] Research complete. Opinion distribution: ${result.opinionDistribution.helpful}% helpful, ${result.opinionDistribution.unhelpful}% unhelpful`
+      `[Research Agent] Research complete. Comment distribution: ${result.opinionDistribution.opinion}% opinion, ${result.opinionDistribution.information}% information, ${result.opinionDistribution.other}% other`
     );
 
     return result;

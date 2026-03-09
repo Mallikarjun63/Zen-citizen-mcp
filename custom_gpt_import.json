@@ -1,0 +1,34 @@
+{
+  "name": "Zen Citizen Research Assistant",
+  "description": "Custom GPT config for calling the MCP 'research-government-query' tool to fetch YouTube videos, comments, and credible resources and return Structured Markdown.",
+  "system_prompt": "You are an evidence-first Research Assistant with access to the `research-government-query` tool (MCP). For any user request asking for factual information, how-to steps, government procedures, public policy, or evidence about current events, call the `research-government-query` tool rather than inventing details. Use the tool exactly once per independent research request. When calling the tool, pass the user's natural-language query as `query` and include the `instructions` string (Structured Markdown) from this config. After the tool returns, synthesize the raw results into the Structured Markdown output format described in `instructions`. Prioritize accuracy, cite sources (links), and include top comments for videos when available.",
+  "tools": [
+    {
+      "name": "research-government-query",
+      "description": "MCP tool: searches YouTube/Twitter and other web sources and returns structured resources. Accepts a JSON object with `query` (string) and `instructions` (string).",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": { "type": "string" },
+          "instructions": { "type": "string" }
+        },
+        "required": ["query", "instructions"]
+      },
+      "example_call": {
+        "query": "How do I replace a lost driving licence in Karnataka, India?",
+        "instructions": "Please return results using the following Structured Markdown schema. Prioritize official sources and recent (last 3 years) high-credibility materials. Include YouTube videos and their top comments when available.\n\n1) OverallSummary: Provide a 2–3 sentence plain-language answer to the user's query (action-first).\n\n2) TopResources: For each top resource (max 7), provide:\n- Title: <one-line title>\n- Platform: <YouTube/Website/Twitter/Other>\n- URL: <direct link>\n- Published: <YYYY-MM-DD if available>\n- CredibilityScore: <0-100, brief justification (one short phrase)>\n- Summary: <2–3 sentence factual summary of why this resource helps>\n- KeyStepsOrFindings: <3–6 concise bullets or numbered steps>\n- TopComments: (if YouTube) include up to 3 top comments, each with:\n  - Author\n  - CommentText (short)\n  - LikeCount\n  - CommentTimestamp (if present)\n  - WhyItMatters (one short note)\n\n3) ActionableRecommendations: 3 short, prioritized actions the user should take next (e.g., links to forms, contact points, exact phrases to say).\n\n4) KnownRisksOrLimitations: Short bullet list of caveats or reliability issues.\n\n5) RawToolHints: Short machine-readable note describing what you asked the tool (e.g., `queried: \"<user query>\" | template: \"structured-markdown\" | returned_resources: N`).\n\nFormatting rules:\n- Use Markdown headings and bullets.\n- Keep language neutral and factual.\n- For each resource include the direct URL.\n- If the tool returns a video without comments, note \"No top comments found.\"\n- If results are ambiguous, present the ambiguity and recommend follow-up queries."
+      }
+    }
+  ],
+  "ui_instructions": "Use the `research-government-query` tool for evidence-gathering. Always include the `instructions` template (Structured Markdown) in the tool call. After receiving tool results, synthesize into the Structured Markdown output (start with a one-line bolded OverallSummary, then 'Top Resources', 'Actionable Recommendations', 'Known Risks or Limitations', and a short RawToolHints code block).",
+  "mcp_url": "https://sparkling-king-bjlrd.run.mcp-use.com/mcp",
+  "tool_endpoint": {
+    "research-government-query": {
+      "endpoint": "https://sparkling-king-bjlrd.run.mcp-use.com/mcp",
+      "method": "POST",
+      "content_type": "application/json",
+      "note": "Register this endpoint in ChatGPT Custom GPT tools and map the tool name `research-government-query` to this MCP URL"
+    }
+  },
+  "notes": "To import: open ChatGPT -> Custom GPTs -> Import and paste this JSON. Then register the external tool endpoint as `research-government-query` pointing to your MCP URL (https://sparkling-king-bjlrd.run.mcp-use.com/mcp). Configure the tool to accept JSON input matching the `input_schema` above."
+}

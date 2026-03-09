@@ -1,6 +1,9 @@
 // Sentiment Analysis Types
 export type SentimentType = "positive" | "negative" | "neutral" | "helpful" | "unhelpful" | "spam";
 
+// Comment label classification: whether a comment is an opinion or factual information
+export type CommentLabel = "opinion" | "information" | "other";
+
 export interface SentimentScore {
   sentiment: SentimentType;
   confidence: number; // 0-100
@@ -10,7 +13,10 @@ export interface SentimentScore {
 // Opinion Data
 export interface Opinion {
   text: string;
-  sentiment: SentimentType;
+  // legacy sentiment field (optional) — we primarily use `label` for comment classification
+  sentiment?: SentimentType;
+  // New label indicating whether the comment is an opinion or factual information
+  label: CommentLabel;
   confidence: number;
   likes: number;
   relevanceScore: number; // 0-100
@@ -68,6 +74,8 @@ export interface GovernmentService {
   requirements: string[];
   processingTime: string;
   relatedServices: string[];
+  // Optional list of document/form URLs discovered on official sites
+  documentLinks?: string[];
 }
 
 // Research Query Result
@@ -76,10 +84,11 @@ export interface ResearchQueryResult {
   timestamp: string;
   governmentService?: GovernmentService;
   resources: ResearchResource[];
+  // Distribution of comment classifications across all resources
   opinionDistribution: {
-    helpful: number; // %
-    unhelpful: number; // %
-    neutral: number; // %
+    opinion: number; // % labeled as opinion
+    information: number; // % labeled as information
+    other: number; // % labeled other/unclear
   };
   averageCredibility: number; // 0-100
   topKeyPoints: KeyPoint[];

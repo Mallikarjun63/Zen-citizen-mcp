@@ -12,8 +12,9 @@ import type {
   ResearchQueryResult,
   CredibilityMetrics,
 } from "./types.js";
-import { classifySentiment, calculateHelpfulnessScore, extractKeyPoints } from "./classifier.js";
+import { classifySentiment, classifyComment, calculateHelpfulnessScore, extractKeyPoints } from "./classifier.js";
 import { findGovernmentService } from "./services-db.js";
+import { enrichGovernmentService } from "./services-fetcher.js";
 
 /**
  * Research Agent Orchestrator
@@ -33,17 +34,18 @@ export function processYouTubeResults(results: YouTubeResults): ResearchResource
     // Process comments for this specific video into opinions
     const commentsForVideo = results.commentsByVideo?.[video.id] || [];
     for (const comment of commentsForVideo) {
-      const sentiment = classifySentiment(comment.textDisplay);
+      const classified = classifyComment(comment.textDisplay);
+      // Keep legacy sentiment neutral since we focus on opinion/information labels
       const helpfulness = calculateHelpfulnessScore(
         comment.textDisplay,
         comment.likeCount,
-        sentiment.sentiment
+        "neutral"
       );
 
       const opinion: Opinion = {
         text: comment.textDisplay,
-        sentiment: sentiment.sentiment,
-        confidence: sentiment.confidence,
+        label: classified.label,
+        confidence: classified.confidence,
         likes: comment.likeCount,
         relevanceScore: helpfulness,
         source: "youtube_comment",
@@ -118,17 +120,17 @@ export function processTwitterResults(results: TwitterResults): ResearchResource
   const allKeyPoints: { text: string; sources: Set<string> }[] = [];
 
   for (const tweet of results.tweets) {
-    const sentiment = classifySentiment(tweet.text);
+    const classified = classifyComment(tweet.text);
     const helpfulness = calculateHelpfulnessScore(
       tweet.text,
       tweet.likeCount,
-      sentiment.sentiment
+      "neutral"
     );
 
     const opinion: Opinion = {
       text: tweet.text,
-      sentiment: sentiment.sentiment,
-      confidence: sentiment.confidence,
+      label: classified.label,
+      confidence: classified.confidence,
       likes: tweet.likeCount,
       relevanceScore: helpfulness,
       source: "tweet",
@@ -243,34 +245,34 @@ function calculateCredibility(input: CredibilityInput): CredibilityMetrics {
 /**
  * Compile final research result
  */
-export function compileResearchResult(
+export async function compileResearchResult(
   query: string,
   youtubeResources: ResearchResource[],
   twitterResources: ResearchResource[]
-): ResearchQueryResult {
+): Promise<ResearchQueryResult> {
   const allResources = [...youtubeResources, ...twitterResources];
 
   // Sort by credibility
   allResources.sort((a, b) => b.credibility.overall - a.credibility.overall);
 
-  // Calculate opinion distribution
-  let helpfulCount = 0;
-  let unhelpfulCount = 0;
-  let neutralCount = 0;
+  // Calculate distribution of comment classifications (opinion/information/other)
+  let opinionCount = 0;
+  let informationCount = 0;
+  let otherCount = 0;
 
   for (const resource of allResources) {
-    for (const opinion of resource.opinions) {
-      if (opinion.sentiment === "positive" || opinion.sentiment === "helpful") helpfulCount++;
-      else if (opinion.sentiment === "negative" || opinion.sentiment === "unhelpful") unhelpfulCount++;
-      else neutralCount++;
+    for (const op of resource.opinions) {
+      if ((op as any).label === "opinion") opinionCount++;
+      else if ((op as any).label === "information") informationCount++;
+      else otherCount++;
     }
   }
 
-  const total = helpfulCount + unhelpfulCount + neutralCount;
+  const total = opinionCount + informationCount + otherCount;
   const opinionDistribution = {
-    helpful: total > 0 ? Math.round((helpfulCount / total) * 100) : 0,
-    unhelpful: total > 0 ? Math.round((unhelpfulCount / total) * 100) : 0,
-    neutral: total > 0 ? Math.round((neutralCount / total) * 100) : 0,
+    opinion: total > 0 ? Math.round((opinionCount / total) * 100) : 0,
+    information: total > 0 ? Math.round((informationCount / total) * 100) : 0,
+    other: total > 0 ? Math.round((otherCount / total) * 100) : 0,
   };
 
   // Extract top key points
@@ -288,8 +290,16 @@ export function compileResearchResult(
   // Generate recommended actions
   const recommendedActions = generateRecommendations(query, topKeyPoints, allResources);
 
-  // Find related government service
-  const governmentService = findGovernmentService(query);
+  // Find related government service and try to enrich with document links
+  let governmentService = findGovernmentService(query);
+  if (governmentService) {
+    try {
+      governmentService = await enrichGovernmentService(governmentService);
+    } catch (err) {
+      // Non-fatal: keep original governmentService if enrichment fails
+      console.warn("Failed to enrich government service:", (err as any)?.message || err);
+    }
+  }
 
   return {
     query,
