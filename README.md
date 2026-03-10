@@ -1,237 +1,457 @@
-# Zen-Citizen MCP Server
+﻿<div align="center">
+<div align="center">
+  <a href="https://mcp-use.com">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="./static/logo_white.svg">
+      <source media="(prefers-color-scheme: light)" srcset="./static/logo_black.svg">
+      <img alt="mcp use logo" src="./static/logo_black.svg" width="60%" >
+    </picture>
+  </a>
+</div>
+&nbsp;
 
-An advanced MCP (Model Context Protocol) server built with [mcp-use](https://mcp-use.com) that integrates YouTube and Twitter/X APIs to search for videos, comments, and tweets while displaying results in interactive widgets.
+<p align="center">
+    <a href="https://mcp-use.com/docs" alt="Documentation">
+        <img src="https://img.shields.io/badge/mcp--use-docs-blue?labelColor=white" /></a>
+    <a href="https://manufact.com" alt="Website">
+        <img src="https://img.shields.io/badge/made by-manufact.com-blue" /></a>
+    <a href="https://github.com/mcp-use/mcp-use/blob/main/LICENSE" alt="License">
+        <img src="https://img.shields.io/github/license/mcp-use/mcp-use" /></a>
+    <a href="https://discord.gg/XkNkSkMz3V" alt="Discord">
+        <img src="https://dcbadge.limes.pink/api/server/XkNkSkMz3V?style=flat" /></a>
+    <br/>
+    <a href="https://mcp-use.com/docs/python" alt="Python docs">
+        <img src="https://img.shields.io/badge/pyhton-docs-blue?labelColor=white&logo=python" alt="Badge"></a>
+    <a href="https://pypi.org/project/mcp_use/" alt="PyPI Version">
+        <img src="https://img.shields.io/pypi/v/mcp_use.svg"/></a>
+    <a href="https://pypi.org/project/mcp_use/" alt="PyPI Downloads">
+        <img src="https://static.pepy.tech/badge/mcp-use" /></a>
+    <br/>
+    <a href="https://mcp-use.com/docs/typescript" alt="Typescript Documentation">
+        <img src="https://img.shields.io/badge/typescript-docs-blue?labelColor=white&logo=typescript" alt="Badge"></a>
+    <a href="https://www.npmjs.com/package/mcp-use" alt="NPM Version">
+        <img src="https://img.shields.io/npm/v/mcp-use.svg"/></a>
+    <a href="https://www.npmjs.com/package/mcp-use" alt="NPM Downloads">
+        <img src="https://img.shields.io/npm/dw/mcp-use.svg"/></a>
+    <br/>
+</p>
+</div>
 
-## Features
+##  About
 
-### 🎯 Core Capabilities
+  <b>mcp-use</b> is the fullstack MCP framework
+  to build MCP Apps for ChatGPT / Claude & MCP Servers for AI Agents.
 
-- **YouTube Search** - Search for videos related to any query
-- **YouTube Comments** - Fetch and display top comments from videos
-- **Twitter Search** - Search recent tweets about any topic
-- **Author Information** - Display channel and profile information
-- **Combined Search** - Search both platforms simultaneously
-- **Interactive UI** - List-based widget with tabbed views
-- **Dark Mode Support** - Theme-aware styling
+- **Build** with mcp-use SDK ([ts](https://www.npmjs.com/package/mcp-use) | [py](https://pypi.org/project/mcp_use/)): MCP Servers and MCP Apps
+- **Preview** on mcp-use MCP Inspector ([online](https://inspector.mcp-use.com/inspector) | [oss](https://github.com/mcp-use/mcp-use/tree/main/libraries/typescript/packages/inspector)): Test and debug your MCP Servers and Apps
+- **Deploy** on [Manufact MCP Cloud](https://manufact.com): Connect your GitHub repo and have your MCP Server and App up and running in production with observability, metrics, logs, branch-deployments, and more
 
-### 🔧 Tools Available
+## Documentation
 
-| Tool | Description | Requires |
-|------|-------------|----------|
-| `search-youtube` | Search YouTube videos + get comments | `YOUTUBE_API_KEY` |
-| `search-twitter` | Search recent tweets | `TWITTER_BEARER_TOKEN` |
-| `search-all` | Combined search (YouTube + Twitter) | Both keys |
-| `search-tools` | Original fruit search (demo) | None |
-| `get-fruit-details` | Get fruit info (demo) | None |
+Visit our [docs](https://mcp-use.com/docs) or jump to a quickstart ([TypeScript](https://mcp-use.com/docs/typescript/getting-started/quickstart) | [Python](https://mcp-use.com/docs/python/getting-started/quickstart))
 
-## Installation & Setup
+### Skills for Coding Agents
 
-### 1. Clone or Download the Project
+> **Using Claude Code, Codex, Cursor or other AI coding agents?**
+>
+> **[Install mcp-use skill for MCP Apps](https://skills.sh/mcp-use/mcp-use/mcp-apps-builder)**
 
-```bash
-cd Zen-Citizen
-npm install
-```
+## Quickstart: MCP Servers and MCP Apps
 
-### 2. Get API Credentials
+### <img src="./static/typescript.svg" height="14" style="margin-right:4px; top:-1px; position:relative;" align="center" /> TypeScript
 
-#### YouTube API
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project
-3. Enable **YouTube Data API v3**
-4. Go to **APIs & Services > Credentials**
-5. Create an **API Key** (Application type: Desktop app)
-6. Copy the API key
-
-#### Twitter/X API
-1. Go to [Twitter Developer Portal](https://developer.twitter.com/en/portal/dashboard)
-2. Create an app or use existing
-3. Go to **Keys and tokens**
-4. Copy the **Bearer Token**
-
-### 3. Configure Environment Variables
-
-Create a `.env` file (or copy from `.env.example`):
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` with your credentials:
-
-```env
-YOUTUBE_API_KEY=your_api_key_here
-TWITTER_BEARER_TOKEN=your_bearer_token_here
-MCP_URL=http://localhost:3000
-```
-
-## Running the Server
-
-### Development
+Build your first MCP Server or MPC App:
 
 ```bash
-npm run dev
+npx create-mcp-use-app@latest
 ```
 
-The server starts at `http://localhost:3000`  
-Inspector available at `http://localhost:3000/inspector`
+Or create a server manually:
 
-### Production Build
-
-```bash
-npm run build
-npm run start
-```
-
-### Deploy to Manufact Cloud
-
-```bash
-npm run deploy
-```
-
-## Usage Examples
-
-### In ChatGPT / Claude
-
-**Search YouTube:**
-```
-Search for "machine learning tutorials" on YouTube
-```
-
-**Search Twitter:**
-```
-Find recent tweets about AI and machine learning
-```
-
-**Combined Search:**
-```
-Search for "React 19 features" on both YouTube and Twitter
-```
-
-## Project Structure
-
-```
-├── index.ts                          # Main server & tool definitions
-├── api.ts                            # YouTube & Twitter API handlers
-├── package.json                      # Dependencies
-├── resources/
-│   ├── product-search-result/        # Fruit search widget (demo)
-│   └── api-results/
-│       ├── widget.tsx                # Results display widget
-│       ├── types.ts                  # TypeScript types
-│       └── styles.css                # Styling
-├── public/                           # Static assets
-└── .env.example                      # Environment template
-```
-
-## API Response Structure
-
-### YouTube Results
 ```typescript
-{
-  videos: [
-    {
-      id: string,
-      title: string,
-      description: string,
-      thumbnail: string,
-      channelTitle: string,
-      viewCount: string,
-      publishedAt: string,
-      url: string
-    }
-  ],
-  comments: [
-    {
-      id: string,
-      authorDisplayName: string,
-      textDisplay: string,
-      likeCount: number,
-      publishedAt: string,
-      authorProfileImageUrl: string
-    }
-  ],
-  query: string
-}
+import { MCPServer, text } from "mcp-use/server";
+import { z } from "zod";
+
+const server = new MCPServer({
+  name: "my-server",
+  version: "1.0.0",
+});
+
+server.tool({
+  name: "get_weather",
+  description: "Get weather for a city",
+  schema: z.object({ city: z.string() }),
+}, async ({ city }) => {
+  return text(`Temperature: 72°F, Condition: sunny, City: ${city}`);
+});
+
+await server.listen(3000);
+// Inspector at http://localhost:3000/inspector
 ```
 
-### Twitter Results
+[**→ Full TypeScript Server Documentation**](https://mcp-use.com/docs/typescript/server)
+
+## MCP Apps
+
+MCP Apps let you build interactive widgets that work across Claude, ChatGPT, and other MCP clients — write once, run everywhere.
+
+**Server**: define a tool and point it to a widget:
+
 ```typescript
-{
-  tweets: [
-    {
-      id: string,
-      text: string,
-      author: string,
-      authorHandle: string,
-      authorAvatarUrl: string,
-      createdAt: string,
-      likeCount: number,
-      retweetCount: number,
-      url: string
-    }
-  ],
-  query: string,
-  count: number
-}
+import { MCPServer, widget } from "mcp-use/server";
+import { z } from "zod";
+
+const server = new MCPServer({
+  name: "weather-app",
+  version: "1.0.0",
+});
+
+server.tool({
+  name: "get-weather",
+  description: "Get weather for a city",
+  schema: z.object({ city: z.string() }),
+  widget: "weather-display", // references resources/weather-display/widget.tsx
+}, async ({ city }) => {
+  return widget({
+    props: { city, temperature: 22, conditions: "Sunny" },
+    message: `Weather in ${city}: Sunny, 22°C`,
+  });
+});
+
+await server.listen(3000);
 ```
 
-## Widget Features
+**Widget**: create a React component in `resources/weather-display/widget.tsx`:
 
-The **api-results** widget provides:
+```tsx
+import { useWidget, type WidgetMetadata } from "mcp-use/react";
+import { z } from "zod";
 
-- 📺 **Tab Navigation** - Switch between YouTube, Twitter, and All results
-- 🎬 **Video Cards** - Thumbnails, titles, channels, view counts
-- 💬 **Comments Display** - Top comments with likes and dates
-- 🐦 **Tweet Cards** - Full tweets with likes and retweets
-- 👤 **Author Info** - Profile pictures and handles
-- 🔗 **Direct Links** - Click to open content on platforms
-- 🌓 **Dark Mode** - Theme awareness
+const propSchema = z.object({
+  city: z.string(),
+  temperature: z.number(),
+  conditions: z.string(),
+});
 
-## Troubleshooting
+export const widgetMetadata: WidgetMetadata = {
+  description: "Display weather information",
+  props: propSchema,
+};
 
-### "YOUTUBE_API_KEY environment variable not set"
-- Ensure you've created `.env` file with your YouTube API key
-- Restart the dev server after adding environment variables
+const WeatherDisplay: React.FC = () => {
+  const { props, isPending, theme } = useWidget<z.infer<typeof propSchema>>();
+  const isDark = theme === "dark";
 
-### "TWITTER_BEARER_TOKEN environment variable not set"
-- Ensure you've created `.env` file with your Twitter Bearer Token
-- Verify token has read permissions for tweets
+  if (isPending) return <div>Loading...</div>;
 
-### "YouTube search failed: 403"
-- Your API key quota might be exceeded
-- Check quota in [Google Cloud Console](https://console.cloud.google.com/)
-- YouTube API has daily quota limits (by default: 10,000 units/day)
+  return (
+    <div style={{
+      background: isDark ? "#1a1a2e" : "#f0f4ff",
+      borderRadius: 16, padding: 24,
+    }}>
+      <h2>{props.city}</h2>
+      <p>{props.temperature}° — {props.conditions}</p>
+    </div>
+  );
+};
 
-### "Twitter search failed: 401"
-- Bearer Token might be invalid or expired
-- Regenerate the token from Twitter Developer Portal
+export default WeatherDisplay;
+```
 
-## Rate Limits
+Widgets in `resources/` are **auto-discovered** — no manual registration needed.
 
-- **YouTube API**: 10,000 units per day (default quota)
-- **Twitter API**: Check your [API plan limits](https://developer.twitter.com/en/docs/projects/overview)
+Visit [**MCP Apps Documentation**](https://mcp-use.com/docs/typescript/server/ui-widgets)
 
-## Next Steps
-
-- ✅ Add more advanced search filters
-- ✅ Cache results to reduce API calls
-- ✅ Add user preferences & favorites
-- ✅ Implement pagination
-- ✅ Add sentiment analysis for tweets
-
-## Learn More
-
-- [mcp-use Documentation](https://mcp-use.com/docs/typescript/getting-started/quickstart)
-- [YouTube API Reference](https://developers.google.com/youtube/v3)
-- [Twitter API v2 Reference](https://developer.twitter.com/en/docs/twitter-api)
-
-## Deploy on Manufact Cloud
+---
+### <img src="./static/python.svg" height="14" style="margin-right:4px; top:-1px; position:relative;" align="center" /> Python
 
 ```bash
-npm run deploy
+pip install mcp-use
 ```
+
+```python
+from typing import Annotated
+
+from mcp.types import ToolAnnotations
+from pydantic import Field
+
+from mcp_use import MCPServer
+
+server = MCPServer(name="Weather Server", version="1.0.0")
+
+@server.tool(
+    name="get_weather",
+    description="Get current weather information for a location",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+)
+async def get_weather(
+    city: Annotated[str, Field(description="City name")],
+) -> str:
+    return f"Temperature: 72°F, Condition: sunny, City: {city}"
+
+# Start server with auto-inspector
+server.run(transport="streamable-http", port=8000)
+# 🎉 Inspector at http://localhost:8000/inspector
+```
+
+[**→ Full Python Server Documentation**](https://mcp-use.com/docs/python/server/index)
 
 ---
 
-Built with ❤️ using [mcp-use](https://mcp-use.com)
+## Inspector
+
+The mcp-use Inspector lets you test and debug your MCP servers interactively.
+
+**Auto-included** when using `server.listen()`:
+
+```typescript
+server.listen(3000);
+// Inspector at http://localhost:3000/inspector
+```
+
+**Online** when connecting to hosted MCP servers:
+<br>
+>Visit https://inspector.mcp-use.com
+
+**Standalone**: inspect any MCP server:
+
+```bash
+npx @mcp-use/inspector --url http://localhost:3000/mcp
+```
+
+Visit [**Inspector Documentation**](https://mcp-use.com/docs/inspector/index)
+
+---
+
+## Deploy
+
+Deploy your MCP server to production:
+
+```bash
+npx @mcp-use/cli login
+npx @mcp-use/cli deploy
+```
+
+Or connect your GitHub repo on [manufact.com](https://manufact.com) — production-ready with observability, metrics, logs, and branch-deployments.
+
+---
+
+## Package Overview
+
+This monorepo contains multiple packages for both Python and TypeScript:
+
+### Python Packages
+
+| Package     | Description                           | Version                                                                                 |
+| ----------- | ------------------------------------- | --------------------------------------------------------------------------------------- |
+| **mcp-use** | Complete MCP server and MCP agent SDK | [![PyPI](https://img.shields.io/pypi/v/mcp_use.svg)](https://pypi.org/project/mcp_use/) |
+
+### TypeScript Packages
+
+| Package                | Description                                     | Version                                                                                                         |
+| ---------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **mcp-use**            | Core framework for MCP servers, MCP apps, and MCP agents | [![npm](https://img.shields.io/npm/v/mcp-use.svg)](https://www.npmjs.com/package/mcp-use)                       |
+| **@mcp-use/cli**       | Build tool with hot reload and auto-inspector   | [![npm](https://img.shields.io/npm/v/@mcp-use/cli.svg)](https://www.npmjs.com/package/@mcp-use/cli)             |
+| **@mcp-use/inspector** | Web-based previewer and debugger for MCP servers              | [![npm](https://img.shields.io/npm/v/@mcp-use/inspector.svg)](https://www.npmjs.com/package/@mcp-use/inspector) |
+| **create-mcp-use-app** | Project scaffolding tool                        | [![npm](https://img.shields.io/npm/v/create-mcp-use-app.svg)](https://www.npmjs.com/package/create-mcp-use-app) |
+
+---
+
+## Also: MCP Agent & Client
+
+mcp-use also provides a full MCP Agent and Client implementation.
+
+<details>
+<summary>Build an AI Agent</summary>
+
+### <img src="./static/python.svg" height="14" style="margin-right:4px; top:-1px; position:relative;" align="center" /> Python
+
+```bash
+pip install mcp-use langchain-openai
+```
+
+```python
+import asyncio
+from langchain_openai import ChatOpenAI
+from mcp_use import MCPAgent, MCPClient
+
+async def main():
+    config = {
+        "mcpServers": {
+            "filesystem": {
+                "command": "npx",
+                "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+            }
+        }
+    }
+
+    client = MCPClient.from_dict(config)
+    llm = ChatOpenAI(model="gpt-4o")
+    agent = MCPAgent(llm=llm, client=client)
+
+    result = await agent.run("List all files in the directory")
+    print(result)
+
+asyncio.run(main())
+```
+
+[**→ Full Python Agent Documentation**](./libraries/python/README.md#quick-start)
+
+### <img src="./static/typescript.svg" height="14" style="margin-right:4px; top:-1px; position:relative;" align="center" /> TypeScript
+
+```bash
+npm install mcp-use @langchain/openai
+```
+
+```typescript
+import { ChatOpenAI } from "@langchain/openai";
+import { MCPAgent, MCPClient } from "mcp-use";
+
+async function main() {
+  const config = {
+    mcpServers: {
+      filesystem: {
+        command: "npx",
+        args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"],
+      },
+    },
+  };
+
+  const client = MCPClient.fromDict(config);
+  const llm = new ChatOpenAI({ modelName: "gpt-4o" });
+  const agent = new MCPAgent({ llm, client });
+
+  const result = await agent.run("List all files in the directory");
+  console.log(result);
+}
+
+main();
+```
+
+[**→ Full TypeScript Agent Documentation**](./libraries/typescript/README.md#-quick-start)
+
+</details>
+
+<details>
+<summary>Use MCP Client</summary>
+
+### <img src="./static/python.svg" height="14" style="margin-right:4px; top:-1px; position:relative;" align="center" /> Python
+
+```python
+import asyncio
+from mcp_use import MCPClient
+
+async def main():
+    config = {
+        "mcpServers": {
+            "calculator": {
+                "command": "npx",
+                "args": ["-y", "@modelcontextprotocol/server-everything"]
+            }
+        }
+    }
+
+    client = MCPClient.from_dict(config)
+    await client.create_all_sessions()
+
+    session = client.get_session("calculator")
+    result = await session.call_tool(name="add", arguments={"a": 5, "b": 3})
+
+    print(f"Result: {result.content[0].text}")
+    await client.close_all_sessions()
+
+asyncio.run(main())
+```
+
+[**→ Python Client Documentation**](./libraries/python/README.md#direct-tool-calls-without-llm)
+
+### <img src="./static/typescript.svg" height="14" style="margin-right:4px; top:-1px; position:relative;" align="center" /> TypeScript
+
+```typescript
+import { MCPClient } from "mcp-use";
+
+async function main() {
+  const config = {
+    mcpServers: {
+      calculator: {
+        command: "npx",
+        args: ["-y", "@modelcontextprotocol/server-everything"],
+      },
+    },
+  };
+
+  const client = new MCPClient(config);
+  await client.createAllSessions();
+
+  const session = client.getSession("calculator");
+  const result = await session.callTool("add", { a: 5, b: 3 });
+
+  console.log(`Result: ${result.content[0].text}`);
+  await client.closeAllSessions();
+}
+
+main();
+```
+
+[**→ TypeScript Client Documentation**](./libraries/typescript/README.md#basic-usage)
+
+</details>
+
+---
+
+## Conformance to Model Context Protocol
+
+<div align="center">
+    <a href="https://github.com/mcp-use/mcp-use/actions/workflows/conformance.yml" alt="Python MCP Conformance">
+        <img src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/tonxxd/6edf670f0446dc9f7a1f32d6bfda2b70/raw/python-conformance.json" /></a>
+    <a href="https://github.com/mcp-use/mcp-use/actions/workflows/conformance.yml" alt="Python MCP Client Conformance">
+        <img src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/tonxxd/6edf670f0446dc9f7a1f32d6bfda2b70/raw/python-client-conformance.json" /></a>
+    <a href="https://github.com/mcp-use/mcp-use/actions/workflows/conformance.yml" alt="TypeScript MCP Conformance">
+        <img src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/tonxxd/6edf670f0446dc9f7a1f32d6bfda2b70/raw/typescript-conformance.json" /></a>
+    <a href="https://github.com/mcp-use/mcp-use/actions/workflows/conformance.yml" alt="TypeScript MCP Client Conformance">
+      <img src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/tonxxd/6edf670f0446dc9f7a1f32d6bfda2b70/raw/typescript-node-client-conformance.json" /></a>
+</div>
+
+---
+
+## Community & Support
+
+- **Discord**: [Join our community](https://discord.gg/XkNkSkMz3V)
+- **GitHub Issues**: [Report bugs or request features](https://github.com/mcp-use/mcp-use/issues)
+- **Documentation**: [mcp-use.com/docs](https://mcp-use.com/docs)
+- **Website**: [manufact.com](https://manufact.com)
+- **X.com**: Follow [Manufact](https://x.com/manufact)
+- **Contributing**: See [CONTRIBUTING.md](https://github.com/mcp-use/mcp-use/blob/main/CONTRIBUTING.md)
+- **License**: MIT © [MCP-Use Contributors](https://github.com/mcp-use/mcp-use/graphs/contributors)
+
+---
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=mcp-use/mcp-use&type=Date)](https://www.star-history.com/#mcp-use/mcp-use&Date)
+
+---
+
+## Contributors
+
+Thanks to all our amazing contributors!
+
+### Core Contributors
+
+1. **Pietro** ([@pietrozullo](https://github.com/pietrozullo))
+2. **Luigi** ([@pederzh](https://github.com/pederzh))
+3. **Enrico** ([@tonxxd](https://github.com/tonxxd))
+
+<br>
+
+<a href="https://github.com/mcp-use/mcp-use/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=mcp-use/mcp-use" />
+</a>
+
+---
+
+<div align="center">
+  <strong>Built with ❤️ by Manufact team and the mcp-use community</strong>
+  <br/>
+  <sub>San Francisco | Zürich</sub>
+</div>

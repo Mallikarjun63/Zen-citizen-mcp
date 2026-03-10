@@ -196,7 +196,9 @@ const ProductSearchResult: React.FC = () => {
           <Carousel
             results={results}
             favorites={favorites}
-            onSelectFruit={(fruit: string) => getFruitDetails({ fruit })}
+            onSelectFruit={(fruit: string) =>
+              (getFruitDetails as (args: { fruit: string }) => void)({ fruit })
+            }
             onToggleFavorite={toggleFavorite}
           />
 

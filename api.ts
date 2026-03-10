@@ -4,6 +4,25 @@ import type { ResearchQueryResult } from "./resources/research-agent/types.js";
 import { processYouTubeResults, processTwitterResults, compileResearchResult } from "./resources/research-agent/orchestrator.js";
 import { summarizeForVideo } from "./resources/research-agent/llm.js";
 
+function normalizeBearerToken(rawToken: string): string {
+  const trimmed = rawToken
+    .trim()
+    .replace(/^Bearer\s+/i, "")
+    .replace(/^['\"]|['\"]$/g, "");
+
+  // Some dashboards/copy-pastes provide URL-encoded tokens (%2B, %3D, etc.).
+  // Decode once so Authorization header gets the raw bearer token format.
+  if (trimmed.includes("%")) {
+    try {
+      return decodeURIComponent(trimmed);
+    } catch {
+      return trimmed;
+    }
+  }
+
+  return trimmed;
+}
+
 /**
  * YouTube API Helper
  * Requires: YOUTUBE_API_KEY environment variable
@@ -95,10 +114,11 @@ export async function searchYouTube(query: string): Promise<YouTubeResults> {
  * Filters for India-specific content
  */
 export async function searchTwitter(query: string): Promise<TwitterResults> {
-  const bearerToken = process.env.TWITTER_BEARER_TOKEN;
-  if (!bearerToken) {
+  const rawBearerToken = process.env.TWITTER_BEARER_TOKEN;
+  if (!rawBearerToken) {
     throw new Error("TWITTER_BEARER_TOKEN environment variable not set");
   }
+  const bearerToken = normalizeBearerToken(rawBearerToken);
 
   try {
     // Add India context to query for region-specific results
@@ -143,7 +163,16 @@ export async function searchTwitter(query: string): Promise<TwitterResults> {
       query,
       count: tweets.length,
     };
-  } catch (error) {
+  } catch (error: any) {
+    const status = error?.response?.status;
+    const apiMessage = error?.response?.data?.detail || error?.response?.data?.title;
+
+    if (status === 401) {
+      throw new Error(
+        `Twitter search failed: Unauthorized (401). Verify TWITTER_BEARER_TOKEN is valid and not URL-encoded. ${apiMessage ? `API: ${apiMessage}` : ""}`.trim()
+      );
+    }
+
     throw new Error(`Twitter search failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 }

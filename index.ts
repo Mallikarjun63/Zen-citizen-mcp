@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { MCPServer, object, text, widget, markdown } from "mcp-use/server";
 import { z } from "zod";
 import { searchYouTube, searchTwitter, searchBothPlatforms, researchGovernmentQuery } from "./api.js";
