@@ -11,8 +11,6 @@ export const widgetMetadata: WidgetMetadata = {
   exposeAsTool: false,
   metadata: {
     prefersBorder: true,
-    invoking: "Searching YouTube and Twitter...",
-    invoked: "Results loaded",
   },
 };
 
