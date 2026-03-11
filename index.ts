@@ -4,6 +4,48 @@ import { z } from "zod";
 import { searchYouTube, searchTwitter, searchBothPlatforms, researchGovernmentQuery } from "./api.js";
 import type { YouTubeResults, TwitterResults } from "./resources/api-results/types.js";
 
+function buildActionLinks(service?: { officialLinks?: string[]; documentLinks?: string[] }) {
+  const links = service?.officialLinks || [];
+  const docs = service?.documentLinks || [];
+
+  const inferPurpose = (url: string) => {
+    const u = url.toLowerCase();
+    if (/(apply|register|application|new-?service|request)/.test(u)) return "apply";
+    if (/(view|search|download|records|certificate|rtc|pahani|khata|mutation)/.test(u)) return "view";
+    if (/(status|track|grievance|help|support|contact|sakala)/.test(u)) return "help";
+    return "official";
+  };
+
+  const inferLabel = (purpose: string, index: number, url: string) => {
+    if (purpose === "apply") return "Apply online";
+    if (purpose === "view") return "View or download records";
+    if (purpose === "help") return "Official help or status portal";
+    try {
+      const host = new URL(url).hostname.replace(/^www\./, "");
+      return index === 0 ? `Official primary portal (${host})` : `Official portal (${host})`;
+    } catch {
+      return index === 0 ? "Official primary portal" : "Official portal";
+    }
+  };
+
+  const actionLinks = links.slice(0, 6).map((url, index) => {
+    const purpose = inferPurpose(url);
+    return {
+      label: inferLabel(purpose, index, url),
+      url,
+      purpose,
+    };
+  });
+
+  const documentLinks = docs.slice(0, 4).map((url) => ({
+    label: "Official document or form",
+    url,
+    purpose: "document",
+  }));
+
+  return [...actionLinks, ...documentLinks];
+}
+
 const server = new MCPServer({
   name: "Zen-Citizen",
   title: "Zen-Citizen", // display name
@@ -241,7 +283,7 @@ server.tool(
   },
   async ({ query, instructions }) => {
     try {
-      const DEFAULT_INSTRUCTIONS = `Respond in Markdown with these sections:\n\n## Summary — one paragraph\n\n## Top Videos — numbered list: title, url, 1‑sent summary, top 2 comments\n\n## Key Points — bullet list of top 5 takeaways\n\n## Actions — 3 concrete next steps with links\n\nDo not include extraneous commentary.`;
+      const DEFAULT_INSTRUCTIONS = `Respond in Markdown with these sections:\n\n## Summary — one paragraph\n\n## Top Videos — numbered list: title, url, 1-sent summary, top 2 comments\n\n## Key Points — bullet list of top 5 takeaways\n\n## Actions — 3-5 concrete next steps with Markdown hyperlinks using official government links only\n\n## Direct Links\n- Apply link\n- View/Download link\n- Status/Help link\n\nDo not include extraneous commentary.`;
 
       const effectiveInstructions = (instructions as string | undefined) || DEFAULT_INSTRUCTIONS;
       const result = await researchGovernmentQuery(query, effectiveInstructions);
@@ -252,6 +294,7 @@ server.tool(
         governmentService: result.governmentService ? {
           name: result.governmentService.name,
           officialLinks: result.governmentService.officialLinks,
+          documentLinks: result.governmentService.documentLinks,
           processingTime: result.governmentService.processingTime,
           requirements: result.governmentService.requirements,
         } : undefined,
@@ -271,6 +314,7 @@ server.tool(
           topComments: (r.opinions || []).slice(0, 3).map((o: any) => ({ text: o.text, sentiment: o.sentiment, likes: o.likes })),
         })),
         recommendedActions: result.recommendedActions,
+        actionLinks: buildActionLinks(result.governmentService as any),
       };
 
       return object(formattedResult);

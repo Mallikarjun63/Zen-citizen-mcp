@@ -6,6 +6,46 @@ import type { GovernmentService } from "./types.js";
  */
 
 export const GOVERNMENT_SERVICES: Record<string, GovernmentService> = {
+  karnataka_ekhata: {
+    id: "karnataka_ekhata",
+    name: "eKhata / RTC / Mutation - Karnataka",
+    keywords: [
+      "ekhata",
+      "e khata",
+      "e-khata",
+      "khata",
+      "rtc",
+      "pahani",
+      "mutation",
+      "karnataka land records",
+      "bhoomi",
+      "kaveri",
+      "e swathu",
+      "eswathu",
+      "bbmp khata",
+      "karnataka property records"
+    ],
+    description: "Access Karnataka property records and related services including eKhata, RTC/Pahani, and mutation via official state portals.",
+    category: "Property",
+    state: "Karnataka",
+    requirements: [
+      "Survey number / Property ID / Khata number",
+      "Owner details",
+      "Sale deed / title documents (for application or transfer)",
+      "Identity proof",
+      "Supporting tax receipts where applicable"
+    ],
+    processingTime: "Varies by local body and request type (typically a few days to several weeks)",
+    officialLinks: [
+      "https://kaveri.karnataka.gov.in/",
+      "https://landrecords.karnataka.gov.in/",
+      "https://eswathu.karnataka.gov.in/",
+      "https://bbmp.gov.in/",
+      "https://sakala.karnataka.gov.in/"
+    ],
+    relatedServices: ["property_registration", "encumbrance_certificate"]
+  },
+
   marks_card: {
     id: "marks_card",
     name: "Marks Card / Score Card Retrieval",
