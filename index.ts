@@ -340,6 +340,17 @@ server.tool(
         "7. Save application ID and track status stages until approved.",
         "8. Download approved eKhata/Khata extract or collect from office if required.",
         "",
+        "## Offline Method (if online portal is unavailable)",
+        "1. Visit local ward office / municipal office / utility office with originals + photocopies.",
+        "2. Fill the physical application form for the same service (Khata/Mutation/scheme request).",
+        "3. Submit documents, pay applicable fees at counter, and collect acknowledgement slip.",
+        "4. Track using application ID; revisit office if verification is pending beyond normal timeline.",
+        "",
+        "## Timelines and Fees",
+        "- Timelines vary by local body and verification load; typical processing can range from a few days to several weeks.",
+        "- Fees depend on service type and jurisdiction; always confirm on official portal/counter before payment.",
+        "- Keep payment receipt and acknowledgement ID safely for follow-ups.",
+        "",
         "## Common Problems and Fixes",
         "1. Asset number not found: search by survey number/address or confirm details at ward office.",
         "2. Name mismatch: upload supporting ID and correction proof/affidavit.",
@@ -370,7 +381,9 @@ server.tool(
         "## Recommended Next Steps",
         ...(topActions.length > 0
           ? topActions.map((a: string, i: number) => `${i + 1}. ${a}`)
-          : ["- No recommendations available."])
+          : ["- No recommendations available."]),
+        "",
+        "If you share your exact city/taluk (for example Bengaluru/BBMP, Mysuru, Hubballi), I can provide a field-by-field form checklist for that local body."
       ].join("\n");
 
       // Format for ChatGPT consumption
