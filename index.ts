@@ -299,21 +299,41 @@ server.tool(
 
       const topVideos = topResources.filter((r: any) => r.type === "video").slice(0, 5);
       const topVideoLinks = topVideos.map((v: any) => ({ title: v.title, url: v.url, credibility: v.credibility }));
+      const topTweets = topResources.filter((r: any) => r.type === "tweet").slice(0, 5);
+      const topTweetLinks = topTweets.map((t: any) => ({ title: t.title, url: t.url, credibility: t.credibility }));
+      const topKeyPoints = result.topKeyPoints.slice(0, 5);
+      const topActions = result.recommendedActions.slice(0, 5);
 
       const responseMarkdown = [
-        `## Summary`,
-        `- Query: ${result.query}`,
-        `- Average credibility: ${result.averageCredibility}`,
+        `## Quick Summary`,
+        `- **Query:** ${result.query}`,
+        `- **Average credibility:** ${result.averageCredibility}/100`,
+        `- **Opinion split:** ${result.opinionDistribution.opinion}% opinion, ${result.opinionDistribution.information}% information, ${result.opinionDistribution.other}% other`,
         "",
-        "## Top Video Links",
+        "## Direct Action Links",
+        ...(actionLinks.length > 0
+          ? actionLinks.map((a: any, i: number) => `${i + 1}. [${a.label}](${a.url})`)
+          : ["- No official links found."]),
+        "",
+        "## Top Video Tutorials",
         ...(topVideos.length > 0
-          ? topVideos.map((v: any, i: number) => `${i + 1}. [${v.title}](${v.url})`)
+          ? topVideos.map((v: any, i: number) => `${i + 1}. [${v.title}](${v.url}) — credibility ${Math.round(v.credibility)}`)
           : ["- No video links found for this query."]),
         "",
-        "## Direct Official Links",
-        ...(actionLinks.length > 0
-          ? actionLinks.map((a: any) => `- [${a.label}](${a.url})`)
-          : ["- No official links found."])
+        "## Top Twitter/X Links",
+        ...(topTweets.length > 0
+          ? topTweets.map((t: any, i: number) => `${i + 1}. [${t.title}](${t.url}) — credibility ${Math.round(t.credibility)}`)
+          : ["- No Twitter/X links found for this query."]),
+        "",
+        "## Key Points",
+        ...(topKeyPoints.length > 0
+          ? topKeyPoints.map((kp: any, i: number) => `${i + 1}. ${kp.text}`)
+          : ["- No key points extracted."]),
+        "",
+        "## Recommended Next Steps",
+        ...(topActions.length > 0
+          ? topActions.map((a: string, i: number) => `${i + 1}. ${a}`)
+          : ["- No recommendations available."])
       ].join("\n");
 
       // Format for ChatGPT consumption
@@ -336,12 +356,16 @@ server.tool(
         topResources,
         topVideos,
         topVideoLinks,
+        topTweets,
+        topTweetLinks,
         recommendedActions: result.recommendedActions,
         actionLinks,
         responseMarkdown,
       };
 
-      return object(formattedResult);
+      // Return plain text markdown to maximize compatibility across clients.
+      // Some clients ignore `markdown()` but display `text()` content reliably.
+      return text(responseMarkdown);
     } catch (error) {
       return text(`Research failed: ${error instanceof Error ? error.message : String(error)}`);
     }
