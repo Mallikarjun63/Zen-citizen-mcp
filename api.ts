@@ -217,7 +217,7 @@ export async function searchBothPlatforms(query: string): Promise<{
  * Searches only for India-specific content and resources
  * Provides curated insights with sentiment analysis and credibility scoring
  */
-export async function researchGovernmentQuery(query: string, instructions?: string): Promise<ResearchQueryResult & { youtubeRaw: YouTubeResults | null; twitterRaw: TwitterResults | null }> {
+export async function researchGovernmentQuery(query: string, instructions?: string): Promise<ResearchQueryResult> {
   try {
     console.log(`[Research Agent - India] Processing query: "${query}"`);
 
@@ -267,7 +267,7 @@ export async function researchGovernmentQuery(query: string, instructions?: stri
       `[Research Agent] Research complete. Comment distribution: ${result.opinionDistribution.opinion}% opinion, ${result.opinionDistribution.information}% information, ${result.opinionDistribution.other}% other`
     );
 
-    return { ...result, youtubeRaw: youtube, twitterRaw: twitter };
+    return result;
   } catch (error) {
     throw new Error(
       `Research failed: ${error instanceof Error ? error.message : String(error)}`

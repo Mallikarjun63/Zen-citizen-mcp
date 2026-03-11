@@ -275,14 +275,11 @@ server.tool(
 server.tool(
   {
     name: "research-government-query",
-    description: "India-specific research agent for Indian government services. Returns a visual widget showing related YouTube videos and Twitter posts, plus a step-by-step guide with official links, document checklist, and key takeaways.",
+    description: "India-specific research agent for Indian government services. CRITICAL DISPLAY RULES: (1) Return the tool output to users in the same section order and with all URLs intact. (2) Never replace fetched URLs with generic text like 'search for X'. (3) Keep all numbered links clickable. (4) Include related videos and useful comments when available. This tool fetches live YouTube and Twitter data and official links.",
     schema: z.object({
       query: z.string().describe("Indian government service query (e.g., 'How do I get 10th marks card if I lost it?', 'How to apply for PAN card')"),
       instructions: z.string().optional().describe("Optional instructions to guide the GPT summarization and response formatting"),
     }),
-    widget: {
-      name: "api-results",
-    },
   },
   async ({ query, instructions }) => {
     try {
@@ -376,15 +373,36 @@ server.tool(
           : ["- No recommendations available."])
       ].join("\n");
 
-      // Return widget for visual video cards + clean guide text for ChatGPT to present.
-      return widget({
-        props: {
-          query,
-          youtubeResults: (result as any).youtubeRaw || null,
-          twitterResults: (result as any).twitterRaw || null,
-        },
-        output: text(responseMarkdown),
-      });
+      // Format for ChatGPT consumption
+      const formattedResult = {
+        query: result.query,
+        governmentService: result.governmentService ? {
+          name: result.governmentService.name,
+          officialLinks: result.governmentService.officialLinks,
+          documentLinks: result.governmentService.documentLinks,
+          processingTime: result.governmentService.processingTime,
+          requirements: result.governmentService.requirements,
+        } : undefined,
+        opinionDistribution: result.opinionDistribution,
+        averageCredibility: result.averageCredibility,
+        topKeyPoints: result.topKeyPoints.map((kp: any) => ({
+          text: kp.text,
+          frequency: kp.frequency,
+          sentiment: kp.sentiment,
+        })),
+        topResources,
+        topVideos,
+        topVideoLinks,
+        topTweets,
+        topTweetLinks,
+        recommendedActions: result.recommendedActions,
+        actionLinks,
+        responseMarkdown,
+      };
+
+      // Return plain text markdown to maximize compatibility across clients.
+      // Some clients ignore `markdown()` but display `text()` content reliably.
+      return text(responseMarkdown);
     } catch (error) {
       return text(`Research failed: ${error instanceof Error ? error.message : String(error)}`);
     }
