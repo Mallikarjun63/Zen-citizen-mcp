@@ -287,6 +287,34 @@ server.tool(
 
       const effectiveInstructions = (instructions as string | undefined) || DEFAULT_INSTRUCTIONS;
       const result = await researchGovernmentQuery(query, effectiveInstructions);
+      const actionLinks = buildActionLinks(result.governmentService as any);
+      const topResources = result.resources.slice(0, 5).map((r: any) => ({
+        title: r.title,
+        url: r.url,
+        type: r.type,
+        credibility: r.credibility.overall,
+        summary: r.metadata?.summary || undefined,
+        topComments: (r.opinions || []).slice(0, 3).map((o: any) => ({ text: o.text, sentiment: o.sentiment, likes: o.likes })),
+      }));
+
+      const topVideos = topResources.filter((r: any) => r.type === "video").slice(0, 5);
+      const topVideoLinks = topVideos.map((v: any) => ({ title: v.title, url: v.url, credibility: v.credibility }));
+
+      const responseMarkdown = [
+        `## Summary`,
+        `- Query: ${result.query}`,
+        `- Average credibility: ${result.averageCredibility}`,
+        "",
+        "## Top Video Links",
+        ...(topVideos.length > 0
+          ? topVideos.map((v: any, i: number) => `${i + 1}. [${v.title}](${v.url})`)
+          : ["- No video links found for this query."]),
+        "",
+        "## Direct Official Links",
+        ...(actionLinks.length > 0
+          ? actionLinks.map((a: any) => `- [${a.label}](${a.url})`)
+          : ["- No official links found."])
+      ].join("\n");
 
       // Format for ChatGPT consumption
       const formattedResult = {
@@ -305,16 +333,12 @@ server.tool(
           frequency: kp.frequency,
           sentiment: kp.sentiment,
         })),
-        topResources: result.resources.slice(0, 5).map((r: any) => ({
-          title: r.title,
-          url: r.url,
-          type: r.type,
-          credibility: r.credibility.overall,
-          summary: r.metadata?.summary || undefined,
-          topComments: (r.opinions || []).slice(0, 3).map((o: any) => ({ text: o.text, sentiment: o.sentiment, likes: o.likes })),
-        })),
+        topResources,
+        topVideos,
+        topVideoLinks,
         recommendedActions: result.recommendedActions,
-        actionLinks: buildActionLinks(result.governmentService as any),
+        actionLinks,
+        responseMarkdown,
       };
 
       return object(formattedResult);
