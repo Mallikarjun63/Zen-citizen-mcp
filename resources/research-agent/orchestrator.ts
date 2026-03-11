@@ -149,8 +149,8 @@ export function processTwitterResults(results: TwitterResults): ResearchResource
       }
     }
 
-    // Create resource for high-credibility tweets
-    if (helpfulness > 60) {
+    // Create resource — include all tweets (will be ranked by credibility later)
+    if (helpfulness > 20) {
       const credibility = calculateCredibility({
         type: "tweet",
         likes: tweet.likeCount,
