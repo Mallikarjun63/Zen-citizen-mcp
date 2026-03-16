@@ -272,26 +272,20 @@ server.tool(
  * Searches only India-specific content and resources
  * Provides structured insights for ChatGPT to compose helpful responses
  */
-const SOURCE_FORMAT_INSTRUCTIONS = `Use ONLY the information retrieved from the MCP server context — do not fabricate or guess any facts.
-
-For every important piece of information, include the supporting source links.
-
-Output Format for each section:
-
-**BLOB X: Section Title**
-[content using only retrieved data]
-
-**Sources:**
-- <Source URL 1>
-- <Source URL 2>
-- <Source URL 3>
-
-Output Rules:
-1. Always include the Sources block under every section.
-2. Only use URLs that were returned by this tool — never invent URLs.
-3. Do not remove, shorten, or rewrite any source URL.
-4. Do not fabricate facts, steps, fees, or requirements not present in the retrieved data.
-5. Every important claim must have a supporting source URL from the retrieved data.`;
+const SOURCE_FORMAT_INSTRUCTIONS = `Analyze the retrieved data and produce one or more BLOB sections.
+    
+    Each section MUST follow this EXACT format:
+    
+    **BLOB X: Section Title**
+    [The retrieved information goes here]
+    
+    **Sources:**
+    * <Source URL 1>
+    * <Source URL 2>
+    
+    ---
+    
+    (Note: Use '---' to separate multiple BLOB sections. Use '*' for bullets. Use bolding exactly as shown.)`;
 
 server.tool(
   {
