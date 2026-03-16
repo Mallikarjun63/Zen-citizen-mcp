@@ -321,6 +321,7 @@ server.tool(
       let blobCount = 1;
       const sections: string[] = [
         `> NOTE: All content below is sourced exclusively from the MCP server context. Do not add, invent, or replace any information or URLs.`,
+        `---`,
         ``,
       ];
 
@@ -334,8 +335,10 @@ server.tool(
         sections.push(``);
         if (svc.officialLinks.length > 0) {
           sections.push(`**Sources:**`);
-          svc.officialLinks.forEach((link: string) => sections.push(`- ${link}`));
+          svc.officialLinks.forEach((link: string) => sections.push(`* ${link}`));
         }
+        sections.push(``);
+        sections.push(`---`);
         sections.push(``);
       }
 
@@ -345,13 +348,15 @@ server.tool(
         sections.push(`**BLOB ${blobCount++}: Requirements & Process**`);
         sections.push(``);
         if (svc.processingTime) sections.push(`Processing Time: ${svc.processingTime}`);
-        svc.requirements.forEach((req: string) => sections.push(`- ${req}`));
+        svc.requirements.forEach((req: string) => sections.push(`* ${req}`));
         sections.push(``);
         const reqLinks = [...(svc.officialLinks || []), ...(svc.documentLinks || [])].slice(0, 6);
         if (reqLinks.length > 0) {
           sections.push(`**Sources:**`);
-          reqLinks.forEach((link: string) => sections.push(`- ${link}`));
+          reqLinks.forEach((link: string) => sections.push(`* ${link}`));
         }
+        sections.push(``);
+        sections.push(`---`);
         sections.push(``);
       }
 
@@ -362,7 +367,9 @@ server.tool(
         actionLinks.forEach((a: any) => sections.push(`- ${a.label}: ${a.url}`));
         sections.push(``);
         sections.push(`**Sources:**`);
-        actionLinks.forEach((a: any) => sections.push(`- ${a.url}`));
+        actionLinks.forEach((a: any) => sections.push(`* ${a.url}`));
+        sections.push(``);
+        sections.push(`---`);
         sections.push(``);
       }
 
@@ -377,7 +384,9 @@ server.tool(
         });
         sections.push(``);
         sections.push(`**Sources:**`);
-        topVideos.forEach((v: any) => sections.push(`- ${v.url}`));
+        topVideos.forEach((v: any) => sections.push(`* ${v.url}`));
+        sections.push(``);
+        sections.push(`---`);
         sections.push(``);
       }
 
@@ -388,7 +397,9 @@ server.tool(
         topTweets.forEach((t: any, i: number) => sections.push(`${i + 1}. ${t.title.substring(0, 140)}`));
         sections.push(``);
         sections.push(`**Sources:**`);
-        topTweets.forEach((t: any) => sections.push(`- ${t.url}`));
+        topTweets.forEach((t: any) => sections.push(`* ${t.url}`));
+        sections.push(``);
+        sections.push(`---`);
         sections.push(``);
       }
 
@@ -396,7 +407,9 @@ server.tool(
       if (topKeyPoints.length > 0) {
         sections.push(`**BLOB ${blobCount++}: Key Insights**`);
         sections.push(``);
-        topKeyPoints.forEach((kp: any) => sections.push(`- ${kp.text}`));
+        topKeyPoints.forEach((kp: any) => sections.push(`* ${kp.text}`));
+        sections.push(``);
+        sections.push(`---`);
         sections.push(``);
       }
 
@@ -408,9 +421,10 @@ server.tool(
         sections.push(``);
         if (actionLinks.length > 0) {
           sections.push(`**Sources:**`);
-          actionLinks.slice(0, 4).forEach((a: any) => sections.push(`- ${a.url}`));
+          actionLinks.slice(0, 4).forEach((a: any) => sections.push(`* ${a.url}`));
         }
         sections.push(``);
+        sections.push(`---`);
       }
 
       const responseMarkdown = sections.join("\n");
