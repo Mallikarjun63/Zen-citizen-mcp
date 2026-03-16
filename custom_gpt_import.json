@@ -21,14 +21,14 @@
     }
   ],
   "ui_instructions": "Use the `research-government-query` tool for evidence-gathering. After receiving results, present each section starting with **BLOB X: Section Title**, followed by retrieved content, and finally a **Sources:** block (with bulleted URLs from the tool output). Never fabricate content or invent URLs. Always include sources under every section.",
-  "mcp_url": "https://sparkling-king-bjlrd.run.mcp-use.com/mcp",
+  "mcp_url": "https://nameless-feather-wq36z.run.mcp-use.com/mcp",
   "tool_endpoint": {
     "research-government-query": {
-      "endpoint": "https://sparkling-king-bjlrd.run.mcp-use.com/mcp",
+      "endpoint": "https://nameless-feather-wq36z.run.mcp-use.com/mcp",
       "method": "POST",
       "content_type": "application/json",
-      "note": "Register this endpoint in ChatGPT Custom GPT tools and map the tool name `research-government-query` to this MCP URL"
+      "note": "Register this endpoint in ChatGPT Custom GPT tools and map the tool name `research-government-query` to this MCP URL (https://nameless-feather-wq36z.run.mcp-use.com/mcp)"
     }
   },
-  "notes": "To import: open ChatGPT -> Custom GPTs -> Import and paste this JSON. Then register the external tool endpoint as `research-government-query` pointing to your MCP URL (https://sparkling-king-bjlrd.run.mcp-use.com/mcp). Configure the tool to accept JSON input matching the `input_schema` above."
+  "notes": "To import: open ChatGPT -> Custom GPTs -> Import and paste this JSON. Then register the external tool endpoint as `research-government-query` pointing to your MCP URL (https://nameless-feather-wq36z.run.mcp-use.com/mcp). Configure the tool to accept JSON input matching the `input_schema` above."
 }
