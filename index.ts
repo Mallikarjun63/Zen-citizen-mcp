@@ -278,13 +278,13 @@ For every important piece of information, include the supporting source links.
 
 Output Format for each section:
 
-Information:
+**BLOB X: Section Title**
 [content using only retrieved data]
 
-Sources:
-<Source URL 1>
-<Source URL 2>
-<Source URL 3>
+**Sources:**
+- <Source URL 1>
+- <Source URL 2>
+- <Source URL 3>
 
 Output Rules:
 1. Always include the Sources block under every section.
@@ -324,6 +324,7 @@ server.tool(
       const topKeyPoints = result.topKeyPoints.slice(0, 5);
       const topActions = result.recommendedActions.slice(0, 5);
 
+      let blobCount = 1;
       const sections: string[] = [
         `> NOTE: All content below is sourced exclusively from the MCP server context. Do not add, invent, or replace any information or URLs.`,
         ``,
@@ -332,15 +333,14 @@ server.tool(
       // Section: About This Service
       if (result.governmentService) {
         const svc = result.governmentService;
-        sections.push(`**About This Service — ${svc.name}**`);
+        sections.push(`**BLOB ${blobCount++}: About This Service — ${svc.name}**`);
         sections.push(``);
-        sections.push(`Information:`);
         sections.push(svc.description);
         if (svc.category) sections.push(`Category: ${svc.category}${svc.state ? ` | State: ${svc.state}` : ``}`);
         sections.push(``);
         if (svc.officialLinks.length > 0) {
-          sections.push(`Sources:`);
-          svc.officialLinks.forEach((link: string) => sections.push(link));
+          sections.push(`**Sources:**`);
+          svc.officialLinks.forEach((link: string) => sections.push(`- ${link}`));
         }
         sections.push(``);
       }
@@ -348,79 +348,73 @@ server.tool(
       // Section: Requirements
       if (result.governmentService && result.governmentService.requirements.length > 0) {
         const svc = result.governmentService;
-        sections.push(`**Requirements & Process**`);
+        sections.push(`**BLOB ${blobCount++}: Requirements & Process**`);
         sections.push(``);
-        sections.push(`Information:`);
         if (svc.processingTime) sections.push(`Processing Time: ${svc.processingTime}`);
         svc.requirements.forEach((req: string) => sections.push(`- ${req}`));
         sections.push(``);
         const reqLinks = [...(svc.officialLinks || []), ...(svc.documentLinks || [])].slice(0, 6);
         if (reqLinks.length > 0) {
-          sections.push(`Sources:`);
-          reqLinks.forEach((link: string) => sections.push(link));
+          sections.push(`**Sources:**`);
+          reqLinks.forEach((link: string) => sections.push(`- ${link}`));
         }
         sections.push(``);
       }
 
       // Section: Official Action Links
       if (actionLinks.length > 0) {
-        sections.push(`**Official Links**`);
+        sections.push(`**BLOB ${blobCount++}: Official Links**`);
         sections.push(``);
-        sections.push(`Information:`);
         actionLinks.forEach((a: any) => sections.push(`- ${a.label}: ${a.url}`));
         sections.push(``);
-        sections.push(`Sources:`);
-        actionLinks.forEach((a: any) => sections.push(a.url));
+        sections.push(`**Sources:**`);
+        actionLinks.forEach((a: any) => sections.push(`- ${a.url}`));
         sections.push(``);
       }
 
       // Section: YouTube Videos
       if (topVideos.length > 0) {
-        sections.push(`**Related YouTube Videos**`);
+        sections.push(`**BLOB ${blobCount++}: Related YouTube Videos**`);
         sections.push(``);
-        sections.push(`Information:`);
         topVideos.forEach((v: any, i: number) => {
           sections.push(`${i + 1}. ${v.title}`);
           const comments = (v.topComments || []).slice(0, 2);
           comments.forEach((c: any) => sections.push(`   - "${String(c.text).replace(/\s+/g, " ").slice(0, 160)}" (${c.likes} likes)`));
         });
         sections.push(``);
-        sections.push(`Sources:`);
-        topVideos.forEach((v: any) => sections.push(v.url));
+        sections.push(`**Sources:**`);
+        topVideos.forEach((v: any) => sections.push(`- ${v.url}`));
         sections.push(``);
       }
 
       // Section: Twitter/X
       if (topTweets.length > 0) {
-        sections.push(`**Community Discussion (Twitter/X)**`);
+        sections.push(`**BLOB ${blobCount++}: Community Discussion (Twitter/X)**`);
         sections.push(``);
-        sections.push(`Information:`);
         topTweets.forEach((t: any, i: number) => sections.push(`${i + 1}. ${t.title.substring(0, 140)}`));
         sections.push(``);
-        sections.push(`Sources:`);
-        topTweets.forEach((t: any) => sections.push(t.url));
+        sections.push(`**Sources:**`);
+        topTweets.forEach((t: any) => sections.push(`- ${t.url}`));
         sections.push(``);
       }
 
       // Section: Key Insights
       if (topKeyPoints.length > 0) {
-        sections.push(`**Key Insights**`);
+        sections.push(`**BLOB ${blobCount++}: Key Insights**`);
         sections.push(``);
-        sections.push(`Information:`);
         topKeyPoints.forEach((kp: any) => sections.push(`- ${kp.text}`));
         sections.push(``);
       }
 
       // Section: Recommended Next Steps
       if (topActions.length > 0) {
-        sections.push(`**Recommended Next Steps**`);
+        sections.push(`**BLOB ${blobCount++}: Recommended Next Steps**`);
         sections.push(``);
-        sections.push(`Information:`);
         topActions.forEach((a: string, i: number) => sections.push(`${i + 1}. ${a}`));
         sections.push(``);
         if (actionLinks.length > 0) {
-          sections.push(`Sources:`);
-          actionLinks.slice(0, 4).forEach((a: any) => sections.push(a.url));
+          sections.push(`**Sources:**`);
+          actionLinks.slice(0, 4).forEach((a: any) => sections.push(`- ${a.url}`));
         }
         sections.push(``);
       }
