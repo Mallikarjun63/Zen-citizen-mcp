@@ -272,20 +272,39 @@ server.tool(
  * Searches only India-specific content and resources
  * Provides structured insights for ChatGPT to compose helpful responses
  */
+const SOURCE_FORMAT_INSTRUCTIONS = `Use ONLY the information retrieved from the MCP server context — do not fabricate or guess any facts.
+
+For every important piece of information, include the supporting source links.
+
+Output Format for each section:
+
+Information:
+[content using only retrieved data]
+
+Sources:
+<Source URL 1>
+<Source URL 2>
+<Source URL 3>
+
+Output Rules:
+1. Always include the Sources block under every section.
+2. Only use URLs that were returned by this tool — never invent URLs.
+3. Do not remove, shorten, or rewrite any source URL.
+4. Do not fabricate facts, steps, fees, or requirements not present in the retrieved data.
+5. Every important claim must have a supporting source URL from the retrieved data.`;
+
 server.tool(
   {
     name: "research-government-query",
-    description: "India-specific research agent for Indian government services. CRITICAL DISPLAY RULES: (1) Return the tool output to users in the same section order and with all URLs intact. (2) Never replace fetched URLs with generic text like 'search for X'. (3) Keep all numbered links clickable. (4) Include related videos and useful comments when available. This tool fetches live YouTube and Twitter data and official links.",
+    description: "India-specific research agent for Indian government services. IMPORTANT: Use ONLY retrieved data in responses — never fabricate facts. Every section must include a Sources block with real URLs from the tool output. Do not replace URLs with generic text.",
     schema: z.object({
       query: z.string().describe("Indian government service query (e.g., 'How do I get 10th marks card if I lost it?', 'How to apply for PAN card')"),
-      instructions: z.string().optional().describe("Optional instructions to guide the GPT summarization and response formatting"),
+      instructions: z.string().default(SOURCE_FORMAT_INSTRUCTIONS).describe("Formatting instructions. Defaults to Information/Sources format: every section has retrieved content followed by real source URLs. Do not override unless needed."),
     }),
   },
   async ({ query, instructions }) => {
     try {
-      const DEFAULT_INSTRUCTIONS = `Respond in Markdown with these sections:\n\n## Summary — one paragraph\n\n## Top Videos — numbered list: title, url, 1-sent summary, top 2 comments\n\n## Key Points — bullet list of top 5 takeaways\n\n## Actions — 3-5 concrete next steps with Markdown hyperlinks using official government links only\n\n## Direct Links\n- Apply link\n- View/Download link\n- Status/Help link\n\nDo not include extraneous commentary.`;
-
-      const effectiveInstructions = (instructions as string | undefined) || DEFAULT_INSTRUCTIONS;
+      const effectiveInstructions = instructions || SOURCE_FORMAT_INSTRUCTIONS;
       const result = await researchGovernmentQuery(query, effectiveInstructions);
       const actionLinks = buildActionLinks(result.governmentService as any);
       const topResources = result.resources.slice(0, 10).map((r: any) => ({
@@ -305,86 +324,108 @@ server.tool(
       const topKeyPoints = result.topKeyPoints.slice(0, 5);
       const topActions = result.recommendedActions.slice(0, 5);
 
-      const responseMarkdown = [
-        `> AI ASSISTANT NOTE: Keep all links below clickable and unchanged. Do not replace URLs with generic suggestions.`,
-        "",
-        `## One-Sentence Plan`,
-        `Use the official local-body portal, submit eKhata/mutation details, upload required documents, pay fees, track verification, and download the approved record.`,
-        "",
-        `## Quick Summary`,
-        `- Query: ${result.query}`,
-        `- Average credibility: ${result.averageCredibility}/100`,
-        `- Opinion split: ${result.opinionDistribution.opinion}% opinion, ${result.opinionDistribution.information}% information, ${result.opinionDistribution.other}% other`,
-        "",
-        "## Official Portal Links",
-        ...(actionLinks.length > 0
-          ? actionLinks.map((a: any, i: number) => `${i + 1}. [${a.label}](${a.url})`)
-          : ["- No official links found."]),
-        "",
-        "## Printable Document Checklist",
-        "1. Registered sale deed / conveyance deed (scan clear PDF)",
-        "2. Property identifier (survey number, asset/assessment number, khata number, or full address)",
-        "3. Applicant ID proof (Aadhaar/PAN/Passport)",
-        "4. Latest property tax receipt (if available)",
-        "5. Supporting records if asked (EC, approved plan, possession certificate)",
-        "6. POA document if filing through representative",
-        "7. Active mobile and email for OTP/status alerts",
-        "",
-        "## Step-by-Step Online Process",
-        "1. Open your local-body official portal (BBMP for Bengaluru, else municipal/eSwathu/eAasthi portal).",
-        "2. Register/login using mobile/email and complete OTP verification.",
-        "3. Select service: eKhata, New Khata, Mutation, or Khata Transfer.",
-        "4. Fill property details exactly as in title/tax records.",
-        "5. Upload all required documents in specified format and size.",
-        "6. Pay applicable fees online or via challan and keep receipt.",
-        "7. Save application ID and track status stages until approved.",
-        "8. Download approved eKhata/Khata extract or collect from office if required.",
-        "",
-        "## Offline Method (if online portal is unavailable)",
-        "1. Visit local ward office / municipal office / utility office with originals + photocopies.",
-        "2. Fill the physical application form for the same service (Khata/Mutation/scheme request).",
-        "3. Submit documents, pay applicable fees at counter, and collect acknowledgement slip.",
-        "4. Track using application ID; revisit office if verification is pending beyond normal timeline.",
-        "",
-        "## Timelines and Fees",
-        "- Timelines vary by local body and verification load; typical processing can range from a few days to several weeks.",
-        "- Fees depend on service type and jurisdiction; always confirm on official portal/counter before payment.",
-        "- Keep payment receipt and acknowledgement ID safely for follow-ups.",
-        "",
-        "## Common Problems and Fixes",
-        "1. Asset number not found: search by survey number/address or confirm details at ward office.",
-        "2. Name mismatch: upload supporting ID and correction proof/affidavit.",
-        "3. Application stuck in verification: raise grievance on Sakala or visit local office with application ID.",
-        "4. Rejected documents: re-upload clear scans matching portal format rules.",
-        "",
-        "## Related YouTube Videos (Direct Links)",
-        ...(topVideos.length > 0
-          ? topVideos.map((v: any, i: number) => `${i + 1}. [${v.title}](${v.url}) (credibility: ${Math.round(v.credibility)}/100)`)
-          : ["- No YouTube videos found for this query."]),
-        "",
-        "## Useful Comments from Videos",
-        ...(topVideos.length > 0
-          ? topVideos.flatMap((v: any, i: number) => {
-              const comments = (v.topComments || []).slice(0, 2);
-              if (comments.length === 0) {
-                return [`${i + 1}. ${v.title}: no comments captured.`];
-              }
-              return comments.map((c: any, j: number) => `${i + 1}.${j + 1} ${v.title}: \"${String(c.text).replace(/\s+/g, " ").slice(0, 180)}\"`);
-            })
-          : ["- No comment insights available."]),
-        "",
-        "## Twitter/X References",
-        ...(topTweets.length > 0
-          ? topTweets.map((t: any, i: number) => `${i + 1}. [${t.author ? `@${t.author}: ` : ""}${t.title.substring(0, 80)}...](${t.url}) (credibility: ${Math.round(t.credibility)}/100)`)
-          : ["- No Twitter/X posts found for this query."]),
-        "",
-        "## Recommended Next Steps",
-        ...(topActions.length > 0
-          ? topActions.map((a: string, i: number) => `${i + 1}. ${a}`)
-          : ["- No recommendations available."]),
-        "",
-        "If you share your exact city/taluk (for example Bengaluru/BBMP, Mysuru, Hubballi), I can provide a field-by-field form checklist for that local body."
-      ].join("\n");
+      const sections: string[] = [
+        `> NOTE: All content below is sourced exclusively from the MCP server context. Do not add, invent, or replace any information or URLs.`,
+        ``,
+      ];
+
+      // Section: About This Service
+      if (result.governmentService) {
+        const svc = result.governmentService;
+        sections.push(`**About This Service — ${svc.name}**`);
+        sections.push(``);
+        sections.push(`Information:`);
+        sections.push(svc.description);
+        if (svc.category) sections.push(`Category: ${svc.category}${svc.state ? ` | State: ${svc.state}` : ``}`);
+        sections.push(``);
+        if (svc.officialLinks.length > 0) {
+          sections.push(`Sources:`);
+          svc.officialLinks.forEach((link: string) => sections.push(link));
+        }
+        sections.push(``);
+      }
+
+      // Section: Requirements
+      if (result.governmentService && result.governmentService.requirements.length > 0) {
+        const svc = result.governmentService;
+        sections.push(`**Requirements & Process**`);
+        sections.push(``);
+        sections.push(`Information:`);
+        if (svc.processingTime) sections.push(`Processing Time: ${svc.processingTime}`);
+        svc.requirements.forEach((req: string) => sections.push(`- ${req}`));
+        sections.push(``);
+        const reqLinks = [...(svc.officialLinks || []), ...(svc.documentLinks || [])].slice(0, 6);
+        if (reqLinks.length > 0) {
+          sections.push(`Sources:`);
+          reqLinks.forEach((link: string) => sections.push(link));
+        }
+        sections.push(``);
+      }
+
+      // Section: Official Action Links
+      if (actionLinks.length > 0) {
+        sections.push(`**Official Links**`);
+        sections.push(``);
+        sections.push(`Information:`);
+        actionLinks.forEach((a: any) => sections.push(`- ${a.label}: ${a.url}`));
+        sections.push(``);
+        sections.push(`Sources:`);
+        actionLinks.forEach((a: any) => sections.push(a.url));
+        sections.push(``);
+      }
+
+      // Section: YouTube Videos
+      if (topVideos.length > 0) {
+        sections.push(`**Related YouTube Videos**`);
+        sections.push(``);
+        sections.push(`Information:`);
+        topVideos.forEach((v: any, i: number) => {
+          sections.push(`${i + 1}. ${v.title}`);
+          const comments = (v.topComments || []).slice(0, 2);
+          comments.forEach((c: any) => sections.push(`   - "${String(c.text).replace(/\s+/g, " ").slice(0, 160)}" (${c.likes} likes)`));
+        });
+        sections.push(``);
+        sections.push(`Sources:`);
+        topVideos.forEach((v: any) => sections.push(v.url));
+        sections.push(``);
+      }
+
+      // Section: Twitter/X
+      if (topTweets.length > 0) {
+        sections.push(`**Community Discussion (Twitter/X)**`);
+        sections.push(``);
+        sections.push(`Information:`);
+        topTweets.forEach((t: any, i: number) => sections.push(`${i + 1}. ${t.title.substring(0, 140)}`));
+        sections.push(``);
+        sections.push(`Sources:`);
+        topTweets.forEach((t: any) => sections.push(t.url));
+        sections.push(``);
+      }
+
+      // Section: Key Insights
+      if (topKeyPoints.length > 0) {
+        sections.push(`**Key Insights**`);
+        sections.push(``);
+        sections.push(`Information:`);
+        topKeyPoints.forEach((kp: any) => sections.push(`- ${kp.text}`));
+        sections.push(``);
+      }
+
+      // Section: Recommended Next Steps
+      if (topActions.length > 0) {
+        sections.push(`**Recommended Next Steps**`);
+        sections.push(``);
+        sections.push(`Information:`);
+        topActions.forEach((a: string, i: number) => sections.push(`${i + 1}. ${a}`));
+        sections.push(``);
+        if (actionLinks.length > 0) {
+          sections.push(`Sources:`);
+          actionLinks.slice(0, 4).forEach((a: any) => sections.push(a.url));
+        }
+        sections.push(``);
+      }
+
+      const responseMarkdown = sections.join("\n");
 
       // Format for ChatGPT consumption
       const formattedResult = {
