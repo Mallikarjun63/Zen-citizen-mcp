@@ -263,28 +263,6 @@ server.tool(
   }
 );
 
-const BLOB_FORMAT_INSTRUCTIONS = `Present the tool output using the BLOB format below. Each BLOB is a self-contained section covering one specific aspect of the topic.
-
-FORMATTING RULES (mandatory — do not skip):
-1. Use the retrieved information directly — do not fabricate or guess facts.
-2. Attach the correct source links that support the information in each BLOB.
-3. Place a Sources section clearly after the content in every BLOB.
-4. Do not invent sources or add URLs that are not in the retrieved data.
-5. Include relevant sources for every section returned.
-6. Every important claim must be backed by a source URL from the tool output.
-7. Keep the response readable but ensure sources remain visible and traceable.
-8. Do not remove, merge away, or summarize away the sources provided by the tool.
-
-Format for each BLOB:
-**BLOB N: [Descriptive Title]**
-[Content paragraph(s) or bullet list — only retrieved data, no invented text]
-
-Sources:
-- [exact URL from retrieved data]
-- [exact URL from retrieved data]
-
-Keep all URLs as plain clickable links — do not shorten, rewrite, or replace them.`;
-
 /**
  * RESEARCH AGENT TOOL - INDIA SPECIFIC
  * AI-powered research agent for Indian government services
@@ -294,18 +272,39 @@ Keep all URLs as plain clickable links — do not shorten, rewrite, or replace t
  * Searches only India-specific content and resources
  * Provides structured insights for ChatGPT to compose helpful responses
  */
+const SOURCE_FORMAT_INSTRUCTIONS = `Use ONLY the information retrieved from the MCP server context — do not fabricate or guess any facts.
+
+For every important piece of information, include the supporting source links.
+
+Output Format for each section:
+
+Information:
+[content using only retrieved data]
+
+Sources:
+<Source URL 1>
+<Source URL 2>
+<Source URL 3>
+
+Output Rules:
+1. Always include the Sources block under every section.
+2. Only use URLs that were returned by this tool — never invent URLs.
+3. Do not remove, shorten, or rewrite any source URL.
+4. Do not fabricate facts, steps, fees, or requirements not present in the retrieved data.
+5. Every important claim must have a supporting source URL from the retrieved data.`;
+
 server.tool(
   {
     name: "research-government-query",
-    description: "India-specific research agent for Indian government services. Always present the output using the BLOB format specified in the `instructions` field — each BLOB covers one topic with a Sources section underneath containing only URLs from the retrieved data. CRITICAL RULES: (1) Never fabricate facts or invent source URLs. (2) Return all URLs intact and clickable. (3) Do not replace fetched URLs with generic text. (4) Include related videos and top comments when available.",
+    description: "India-specific research agent for Indian government services. IMPORTANT: Use ONLY retrieved data in responses — never fabricate facts. Every section must include a Sources block with real URLs from the tool output. Do not replace URLs with generic text.",
     schema: z.object({
       query: z.string().describe("Indian government service query (e.g., 'How do I get 10th marks card if I lost it?', 'How to apply for PAN card')"),
-      instructions: z.string().default(BLOB_FORMAT_INSTRUCTIONS).describe("Formatting instructions for the response. Defaults to BLOB format: each section has a Sources list of real URLs underneath it. Do not override unless you need a different format."),
+      instructions: z.string().default(SOURCE_FORMAT_INSTRUCTIONS).describe("Formatting instructions. Defaults to Information/Sources format: every section has retrieved content followed by real source URLs. Do not override unless needed."),
     }),
   },
   async ({ query, instructions }) => {
     try {
-      const effectiveInstructions = instructions || BLOB_FORMAT_INSTRUCTIONS;
+      const effectiveInstructions = instructions || SOURCE_FORMAT_INSTRUCTIONS;
       const result = await researchGovernmentQuery(query, effectiveInstructions);
       const actionLinks = buildActionLinks(result.governmentService as any);
       const topResources = result.resources.slice(0, 10).map((r: any) => ({
@@ -325,115 +324,108 @@ server.tool(
       const topKeyPoints = result.topKeyPoints.slice(0, 5);
       const topActions = result.recommendedActions.slice(0, 5);
 
-      const blobSections: string[] = [
-        `> **ASSISTANT NOTE:** Keep all links below clickable and preserve sources exactly as shown. Do not replace URLs with generic suggestions.`,
+      const sections: string[] = [
+        `> NOTE: All content below is sourced exclusively from the MCP server context. Do not add, invent, or replace any information or URLs.`,
         ``,
       ];
 
-      let blobNum = 1;
-
-      // BLOB: About This Service
+      // Section: About This Service
       if (result.governmentService) {
         const svc = result.governmentService;
-        blobSections.push(`**BLOB ${blobNum}: About This Service — ${svc.name}**`);
-        blobSections.push(``);
-        blobSections.push(svc.description);
-        if (svc.category) blobSections.push(`\nCategory: ${svc.category}${svc.state ? ` | State: ${svc.state}` : ``}`);
-        blobSections.push(``);
+        sections.push(`**About This Service — ${svc.name}**`);
+        sections.push(``);
+        sections.push(`Information:`);
+        sections.push(svc.description);
+        if (svc.category) sections.push(`Category: ${svc.category}${svc.state ? ` | State: ${svc.state}` : ``}`);
+        sections.push(``);
         if (svc.officialLinks.length > 0) {
-          blobSections.push(`Sources:`);
-          svc.officialLinks.forEach((link: string) => blobSections.push(`- ${link}`));
+          sections.push(`Sources:`);
+          svc.officialLinks.forEach((link: string) => sections.push(link));
         }
-        blobSections.push(``);
-        blobNum++;
+        sections.push(``);
       }
 
-      // BLOB: Requirements & Process
+      // Section: Requirements
       if (result.governmentService && result.governmentService.requirements.length > 0) {
         const svc = result.governmentService;
-        blobSections.push(`**BLOB ${blobNum}: Requirements & Process**`);
-        blobSections.push(``);
-        if (svc.processingTime) blobSections.push(`Processing Time: ${svc.processingTime}\n`);
-        svc.requirements.forEach((req: string) => blobSections.push(`- ${req}`));
-        blobSections.push(``);
-        const reqLinks = [...(svc.officialLinks || []), ...(svc.documentLinks || [])];
+        sections.push(`**Requirements & Process**`);
+        sections.push(``);
+        sections.push(`Information:`);
+        if (svc.processingTime) sections.push(`Processing Time: ${svc.processingTime}`);
+        svc.requirements.forEach((req: string) => sections.push(`- ${req}`));
+        sections.push(``);
+        const reqLinks = [...(svc.officialLinks || []), ...(svc.documentLinks || [])].slice(0, 6);
         if (reqLinks.length > 0) {
-          blobSections.push(`Sources:`);
-          reqLinks.slice(0, 6).forEach((link: string) => blobSections.push(`- ${link}`));
+          sections.push(`Sources:`);
+          reqLinks.forEach((link: string) => sections.push(link));
         }
-        blobSections.push(``);
-        blobNum++;
+        sections.push(``);
       }
 
-      // BLOB: Official Action Links
+      // Section: Official Action Links
       if (actionLinks.length > 0) {
-        blobSections.push(`**BLOB ${blobNum}: Official Action Links**`);
-        blobSections.push(``);
-        actionLinks.forEach((a: any) => blobSections.push(`- **${a.label}:** ${a.url}`));
-        blobSections.push(``);
-        blobSections.push(`Sources:`);
-        actionLinks.forEach((a: any) => blobSections.push(`- ${a.url}`));
-        blobSections.push(``);
-        blobNum++;
+        sections.push(`**Official Links**`);
+        sections.push(``);
+        sections.push(`Information:`);
+        actionLinks.forEach((a: any) => sections.push(`- ${a.label}: ${a.url}`));
+        sections.push(``);
+        sections.push(`Sources:`);
+        actionLinks.forEach((a: any) => sections.push(a.url));
+        sections.push(``);
       }
 
-      // BLOB: What YouTube Videos Are Saying
+      // Section: YouTube Videos
       if (topVideos.length > 0) {
-        blobSections.push(`**BLOB ${blobNum}: What YouTube Videos Are Saying**`);
-        blobSections.push(``);
+        sections.push(`**Related YouTube Videos**`);
+        sections.push(``);
+        sections.push(`Information:`);
         topVideos.forEach((v: any, i: number) => {
-          blobSections.push(`${i + 1}. **${v.title}** (Credibility: ${Math.round(v.credibility)}/100)`);
-          if (v.summary) blobSections.push(`   ${v.summary}`);
+          sections.push(`${i + 1}. ${v.title}`);
           const comments = (v.topComments || []).slice(0, 2);
-          if (comments.length > 0) {
-            blobSections.push(`   Top comments:`);
-            comments.forEach((c: any) => blobSections.push(`   - "${String(c.text).replace(/\s+/g, " ").slice(0, 160)}" (${c.likes} likes)`));
-          }
+          comments.forEach((c: any) => sections.push(`   - "${String(c.text).replace(/\s+/g, " ").slice(0, 160)}" (${c.likes} likes)`));
         });
-        blobSections.push(``);
-        blobSections.push(`Sources:`);
-        topVideos.forEach((v: any) => blobSections.push(`- ${v.url}`));
-        blobSections.push(``);
-        blobNum++;
+        sections.push(``);
+        sections.push(`Sources:`);
+        topVideos.forEach((v: any) => sections.push(v.url));
+        sections.push(``);
       }
 
-      // BLOB: Community Discussion (Twitter/X)
+      // Section: Twitter/X
       if (topTweets.length > 0) {
-        blobSections.push(`**BLOB ${blobNum}: Community Discussion (Twitter/X)**`);
-        blobSections.push(``);
-        topTweets.forEach((t: any, i: number) => {
-          blobSections.push(`${i + 1}. ${t.title.substring(0, 140)}`);
-        });
-        blobSections.push(``);
-        blobSections.push(`Sources:`);
-        topTweets.forEach((t: any) => blobSections.push(`- ${t.url}`));
-        blobSections.push(``);
-        blobNum++;
+        sections.push(`**Community Discussion (Twitter/X)**`);
+        sections.push(``);
+        sections.push(`Information:`);
+        topTweets.forEach((t: any, i: number) => sections.push(`${i + 1}. ${t.title.substring(0, 140)}`));
+        sections.push(``);
+        sections.push(`Sources:`);
+        topTweets.forEach((t: any) => sections.push(t.url));
+        sections.push(``);
       }
 
-      // BLOB: Key Insights from People's Experiences
+      // Section: Key Insights
       if (topKeyPoints.length > 0) {
-        blobSections.push(`**BLOB ${blobNum}: Key Insights from People's Experiences**`);
-        blobSections.push(``);
-        topKeyPoints.forEach((kp: any) => blobSections.push(`- ${kp.text}`));
-        blobSections.push(``);
-        blobNum++;
+        sections.push(`**Key Insights**`);
+        sections.push(``);
+        sections.push(`Information:`);
+        topKeyPoints.forEach((kp: any) => sections.push(`- ${kp.text}`));
+        sections.push(``);
       }
 
-      // BLOB: Recommended Next Steps
+      // Section: Recommended Next Steps
       if (topActions.length > 0) {
-        blobSections.push(`**BLOB ${blobNum}: Recommended Next Steps**`);
-        blobSections.push(``);
-        topActions.forEach((a: string, i: number) => blobSections.push(`${i + 1}. ${a}`));
-        blobSections.push(``);
+        sections.push(`**Recommended Next Steps**`);
+        sections.push(``);
+        sections.push(`Information:`);
+        topActions.forEach((a: string, i: number) => sections.push(`${i + 1}. ${a}`));
+        sections.push(``);
         if (actionLinks.length > 0) {
-          blobSections.push(`Sources:`);
-          actionLinks.slice(0, 4).forEach((a: any) => blobSections.push(`- ${a.url}`));
+          sections.push(`Sources:`);
+          actionLinks.slice(0, 4).forEach((a: any) => sections.push(a.url));
         }
-        blobSections.push(``);
+        sections.push(``);
       }
 
-      const responseMarkdown = blobSections.join("\n");
+      const responseMarkdown = sections.join("\n");
 
       // Format for ChatGPT consumption
       const formattedResult = {
