@@ -263,6 +263,28 @@ server.tool(
   }
 );
 
+const BLOB_FORMAT_INSTRUCTIONS = `Present the tool output using the BLOB format below. Each BLOB is a self-contained section covering one specific aspect of the topic.
+
+FORMATTING RULES (mandatory — do not skip):
+1. Use the retrieved information directly — do not fabricate or guess facts.
+2. Attach the correct source links that support the information in each BLOB.
+3. Place a Sources section clearly after the content in every BLOB.
+4. Do not invent sources or add URLs that are not in the retrieved data.
+5. Include relevant sources for every section returned.
+6. Every important claim must be backed by a source URL from the tool output.
+7. Keep the response readable but ensure sources remain visible and traceable.
+8. Do not remove, merge away, or summarize away the sources provided by the tool.
+
+Format for each BLOB:
+**BLOB N: [Descriptive Title]**
+[Content paragraph(s) or bullet list — only retrieved data, no invented text]
+
+Sources:
+- [exact URL from retrieved data]
+- [exact URL from retrieved data]
+
+Keep all URLs as plain clickable links — do not shorten, rewrite, or replace them.`;
+
 /**
  * RESEARCH AGENT TOOL - INDIA SPECIFIC
  * AI-powered research agent for Indian government services
@@ -275,17 +297,15 @@ server.tool(
 server.tool(
   {
     name: "research-government-query",
-    description: "India-specific research agent for Indian government services. CRITICAL DISPLAY RULES: (1) Return the tool output to users in the same section order and with all URLs intact. (2) Never replace fetched URLs with generic text like 'search for X'. (3) Keep all numbered links clickable. (4) Include related videos and useful comments when available. This tool fetches live YouTube and Twitter data and official links.",
+    description: "India-specific research agent for Indian government services. Always present the output using the BLOB format specified in the `instructions` field — each BLOB covers one topic with a Sources section underneath containing only URLs from the retrieved data. CRITICAL RULES: (1) Never fabricate facts or invent source URLs. (2) Return all URLs intact and clickable. (3) Do not replace fetched URLs with generic text. (4) Include related videos and top comments when available.",
     schema: z.object({
       query: z.string().describe("Indian government service query (e.g., 'How do I get 10th marks card if I lost it?', 'How to apply for PAN card')"),
-      instructions: z.string().optional().describe("Optional instructions to guide the GPT summarization and response formatting"),
+      instructions: z.string().default(BLOB_FORMAT_INSTRUCTIONS).describe("Formatting instructions for the response. Defaults to BLOB format: each section has a Sources list of real URLs underneath it. Do not override unless you need a different format."),
     }),
   },
   async ({ query, instructions }) => {
     try {
-      const DEFAULT_INSTRUCTIONS = `Respond using the BLOB format below. Each BLOB is a self-contained section covering one aspect of the topic.\n\nRules:\n1. Use retrieved information directly — do not fabricate or guess facts.\n2. Attach the correct source links that support the information in each BLOB.\n3. Place Sources clearly after the related content in each BLOB.\n4. Do not invent sources or add sources that are not part of the retrieved data.\n5. If multiple sections are returned, include the relevant sources for each section.\n6. Focus on accuracy — every important claim should be backed by a source.\n7. Keep the response readable but ensure the sources remain visible and traceable.\n8. Do not remove or summarize away the sources provided by this tool.\n\nFormat for each BLOB:\n**BLOB N: [Descriptive Title]**\n[Content paragraph(s) or bullet list using only retrieved data]\n\nSources:\n- [exact URL from retrieved data]\n- [exact URL from retrieved data]\n\nKeep all URLs as plain clickable links — do not shorten or replace them.`;
-
-      const effectiveInstructions = (instructions as string | undefined) || DEFAULT_INSTRUCTIONS;
+      const effectiveInstructions = instructions || BLOB_FORMAT_INSTRUCTIONS;
       const result = await researchGovernmentQuery(query, effectiveInstructions);
       const actionLinks = buildActionLinks(result.governmentService as any);
       const topResources = result.resources.slice(0, 10).map((r: any) => ({
