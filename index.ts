@@ -283,7 +283,7 @@ server.tool(
   },
   async ({ query, instructions }) => {
     try {
-      const DEFAULT_INSTRUCTIONS = `Respond in Markdown with these sections:\n\n## Summary — one paragraph\n\n## Top Videos — numbered list: title, url, 1-sent summary, top 2 comments\n\n## Key Points — bullet list of top 5 takeaways\n\n## Actions — 3-5 concrete next steps with Markdown hyperlinks using official government links only\n\n## Direct Links\n- Apply link\n- View/Download link\n- Status/Help link\n\nDo not include extraneous commentary.`;
+      const DEFAULT_INSTRUCTIONS = `Respond using the BLOB format below. Each BLOB is a self-contained section covering one aspect of the topic.\n\nRules:\n1. Use retrieved information directly — do not fabricate or guess facts.\n2. Attach the correct source links that support the information in each BLOB.\n3. Place Sources clearly after the related content in each BLOB.\n4. Do not invent sources or add sources that are not part of the retrieved data.\n5. If multiple sections are returned, include the relevant sources for each section.\n6. Focus on accuracy — every important claim should be backed by a source.\n7. Keep the response readable but ensure the sources remain visible and traceable.\n8. Do not remove or summarize away the sources provided by this tool.\n\nFormat for each BLOB:\n**BLOB N: [Descriptive Title]**\n[Content paragraph(s) or bullet list using only retrieved data]\n\nSources:\n- [exact URL from retrieved data]\n- [exact URL from retrieved data]\n\nKeep all URLs as plain clickable links — do not shorten or replace them.`;
 
       const effectiveInstructions = (instructions as string | undefined) || DEFAULT_INSTRUCTIONS;
       const result = await researchGovernmentQuery(query, effectiveInstructions);
@@ -305,86 +305,115 @@ server.tool(
       const topKeyPoints = result.topKeyPoints.slice(0, 5);
       const topActions = result.recommendedActions.slice(0, 5);
 
-      const responseMarkdown = [
-        `> AI ASSISTANT NOTE: Keep all links below clickable and unchanged. Do not replace URLs with generic suggestions.`,
-        "",
-        `## One-Sentence Plan`,
-        `Use the official local-body portal, submit eKhata/mutation details, upload required documents, pay fees, track verification, and download the approved record.`,
-        "",
-        `## Quick Summary`,
-        `- Query: ${result.query}`,
-        `- Average credibility: ${result.averageCredibility}/100`,
-        `- Opinion split: ${result.opinionDistribution.opinion}% opinion, ${result.opinionDistribution.information}% information, ${result.opinionDistribution.other}% other`,
-        "",
-        "## Official Portal Links",
-        ...(actionLinks.length > 0
-          ? actionLinks.map((a: any, i: number) => `${i + 1}. [${a.label}](${a.url})`)
-          : ["- No official links found."]),
-        "",
-        "## Printable Document Checklist",
-        "1. Registered sale deed / conveyance deed (scan clear PDF)",
-        "2. Property identifier (survey number, asset/assessment number, khata number, or full address)",
-        "3. Applicant ID proof (Aadhaar/PAN/Passport)",
-        "4. Latest property tax receipt (if available)",
-        "5. Supporting records if asked (EC, approved plan, possession certificate)",
-        "6. POA document if filing through representative",
-        "7. Active mobile and email for OTP/status alerts",
-        "",
-        "## Step-by-Step Online Process",
-        "1. Open your local-body official portal (BBMP for Bengaluru, else municipal/eSwathu/eAasthi portal).",
-        "2. Register/login using mobile/email and complete OTP verification.",
-        "3. Select service: eKhata, New Khata, Mutation, or Khata Transfer.",
-        "4. Fill property details exactly as in title/tax records.",
-        "5. Upload all required documents in specified format and size.",
-        "6. Pay applicable fees online or via challan and keep receipt.",
-        "7. Save application ID and track status stages until approved.",
-        "8. Download approved eKhata/Khata extract or collect from office if required.",
-        "",
-        "## Offline Method (if online portal is unavailable)",
-        "1. Visit local ward office / municipal office / utility office with originals + photocopies.",
-        "2. Fill the physical application form for the same service (Khata/Mutation/scheme request).",
-        "3. Submit documents, pay applicable fees at counter, and collect acknowledgement slip.",
-        "4. Track using application ID; revisit office if verification is pending beyond normal timeline.",
-        "",
-        "## Timelines and Fees",
-        "- Timelines vary by local body and verification load; typical processing can range from a few days to several weeks.",
-        "- Fees depend on service type and jurisdiction; always confirm on official portal/counter before payment.",
-        "- Keep payment receipt and acknowledgement ID safely for follow-ups.",
-        "",
-        "## Common Problems and Fixes",
-        "1. Asset number not found: search by survey number/address or confirm details at ward office.",
-        "2. Name mismatch: upload supporting ID and correction proof/affidavit.",
-        "3. Application stuck in verification: raise grievance on Sakala or visit local office with application ID.",
-        "4. Rejected documents: re-upload clear scans matching portal format rules.",
-        "",
-        "## Related YouTube Videos (Direct Links)",
-        ...(topVideos.length > 0
-          ? topVideos.map((v: any, i: number) => `${i + 1}. [${v.title}](${v.url}) (credibility: ${Math.round(v.credibility)}/100)`)
-          : ["- No YouTube videos found for this query."]),
-        "",
-        "## Useful Comments from Videos",
-        ...(topVideos.length > 0
-          ? topVideos.flatMap((v: any, i: number) => {
-              const comments = (v.topComments || []).slice(0, 2);
-              if (comments.length === 0) {
-                return [`${i + 1}. ${v.title}: no comments captured.`];
-              }
-              return comments.map((c: any, j: number) => `${i + 1}.${j + 1} ${v.title}: \"${String(c.text).replace(/\s+/g, " ").slice(0, 180)}\"`);
-            })
-          : ["- No comment insights available."]),
-        "",
-        "## Twitter/X References",
-        ...(topTweets.length > 0
-          ? topTweets.map((t: any, i: number) => `${i + 1}. [${t.author ? `@${t.author}: ` : ""}${t.title.substring(0, 80)}...](${t.url}) (credibility: ${Math.round(t.credibility)}/100)`)
-          : ["- No Twitter/X posts found for this query."]),
-        "",
-        "## Recommended Next Steps",
-        ...(topActions.length > 0
-          ? topActions.map((a: string, i: number) => `${i + 1}. ${a}`)
-          : ["- No recommendations available."]),
-        "",
-        "If you share your exact city/taluk (for example Bengaluru/BBMP, Mysuru, Hubballi), I can provide a field-by-field form checklist for that local body."
-      ].join("\n");
+      const blobSections: string[] = [
+        `> **ASSISTANT NOTE:** Keep all links below clickable and preserve sources exactly as shown. Do not replace URLs with generic suggestions.`,
+        ``,
+      ];
+
+      let blobNum = 1;
+
+      // BLOB: About This Service
+      if (result.governmentService) {
+        const svc = result.governmentService;
+        blobSections.push(`**BLOB ${blobNum}: About This Service — ${svc.name}**`);
+        blobSections.push(``);
+        blobSections.push(svc.description);
+        if (svc.category) blobSections.push(`\nCategory: ${svc.category}${svc.state ? ` | State: ${svc.state}` : ``}`);
+        blobSections.push(``);
+        if (svc.officialLinks.length > 0) {
+          blobSections.push(`Sources:`);
+          svc.officialLinks.forEach((link: string) => blobSections.push(`- ${link}`));
+        }
+        blobSections.push(``);
+        blobNum++;
+      }
+
+      // BLOB: Requirements & Process
+      if (result.governmentService && result.governmentService.requirements.length > 0) {
+        const svc = result.governmentService;
+        blobSections.push(`**BLOB ${blobNum}: Requirements & Process**`);
+        blobSections.push(``);
+        if (svc.processingTime) blobSections.push(`Processing Time: ${svc.processingTime}\n`);
+        svc.requirements.forEach((req: string) => blobSections.push(`- ${req}`));
+        blobSections.push(``);
+        const reqLinks = [...(svc.officialLinks || []), ...(svc.documentLinks || [])];
+        if (reqLinks.length > 0) {
+          blobSections.push(`Sources:`);
+          reqLinks.slice(0, 6).forEach((link: string) => blobSections.push(`- ${link}`));
+        }
+        blobSections.push(``);
+        blobNum++;
+      }
+
+      // BLOB: Official Action Links
+      if (actionLinks.length > 0) {
+        blobSections.push(`**BLOB ${blobNum}: Official Action Links**`);
+        blobSections.push(``);
+        actionLinks.forEach((a: any) => blobSections.push(`- **${a.label}:** ${a.url}`));
+        blobSections.push(``);
+        blobSections.push(`Sources:`);
+        actionLinks.forEach((a: any) => blobSections.push(`- ${a.url}`));
+        blobSections.push(``);
+        blobNum++;
+      }
+
+      // BLOB: What YouTube Videos Are Saying
+      if (topVideos.length > 0) {
+        blobSections.push(`**BLOB ${blobNum}: What YouTube Videos Are Saying**`);
+        blobSections.push(``);
+        topVideos.forEach((v: any, i: number) => {
+          blobSections.push(`${i + 1}. **${v.title}** (Credibility: ${Math.round(v.credibility)}/100)`);
+          if (v.summary) blobSections.push(`   ${v.summary}`);
+          const comments = (v.topComments || []).slice(0, 2);
+          if (comments.length > 0) {
+            blobSections.push(`   Top comments:`);
+            comments.forEach((c: any) => blobSections.push(`   - "${String(c.text).replace(/\s+/g, " ").slice(0, 160)}" (${c.likes} likes)`));
+          }
+        });
+        blobSections.push(``);
+        blobSections.push(`Sources:`);
+        topVideos.forEach((v: any) => blobSections.push(`- ${v.url}`));
+        blobSections.push(``);
+        blobNum++;
+      }
+
+      // BLOB: Community Discussion (Twitter/X)
+      if (topTweets.length > 0) {
+        blobSections.push(`**BLOB ${blobNum}: Community Discussion (Twitter/X)**`);
+        blobSections.push(``);
+        topTweets.forEach((t: any, i: number) => {
+          blobSections.push(`${i + 1}. ${t.title.substring(0, 140)}`);
+        });
+        blobSections.push(``);
+        blobSections.push(`Sources:`);
+        topTweets.forEach((t: any) => blobSections.push(`- ${t.url}`));
+        blobSections.push(``);
+        blobNum++;
+      }
+
+      // BLOB: Key Insights from People's Experiences
+      if (topKeyPoints.length > 0) {
+        blobSections.push(`**BLOB ${blobNum}: Key Insights from People's Experiences**`);
+        blobSections.push(``);
+        topKeyPoints.forEach((kp: any) => blobSections.push(`- ${kp.text}`));
+        blobSections.push(``);
+        blobNum++;
+      }
+
+      // BLOB: Recommended Next Steps
+      if (topActions.length > 0) {
+        blobSections.push(`**BLOB ${blobNum}: Recommended Next Steps**`);
+        blobSections.push(``);
+        topActions.forEach((a: string, i: number) => blobSections.push(`${i + 1}. ${a}`));
+        blobSections.push(``);
+        if (actionLinks.length > 0) {
+          blobSections.push(`Sources:`);
+          actionLinks.slice(0, 4).forEach((a: any) => blobSections.push(`- ${a.url}`));
+        }
+        blobSections.push(``);
+      }
+
+      const responseMarkdown = blobSections.join("\n");
 
       // Format for ChatGPT consumption
       const formattedResult = {
