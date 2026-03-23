@@ -330,9 +330,12 @@ server.tool(
         const svc = result.governmentService;
         sections.push(`**BLOB ${blobCount++}: Information Hub — ${svc.name}**`);
         sections.push(``);
-        const categoryPart = svc.category ? ` This service is categorized under ${svc.category}${svc.state ? ` and is specifically for the state of ${svc.state}` : ""}.` : "";
-        sections.push(`${svc.description}${categoryPart}`);
+        sections.push(svc.description);
         sections.push(``);
+        if (svc.category || svc.state) {
+          sections.push(`This service is categorized under ${svc.category || "General Government"}.${svc.state ? ` It is specifically managed by or intended for residents of the state of ${svc.state}.` : " it serves a broad jurisdictional area."}`);
+          sections.push(``);
+        }
         sections.push(`**Sources:**`);
         if (svc.officialLinks.length > 0) {
           sections.push(svc.officialLinks.join(", "));
@@ -349,9 +352,12 @@ server.tool(
         const svc = result.governmentService;
         sections.push(`**BLOB ${blobCount++}: Requirements & Process**`);
         sections.push(``);
-        const processPart = svc.processingTime ? ` The estimated processing time for this service is ${svc.processingTime}.` : "";
-        const reqsPart = ` The requirements include ${svc.requirements.join(", ").replace(/, ([^,]*)$/, " and $1")}.`;
-        sections.push(`To complete this process, you must meet several requirements.${processPart}${reqsPart}`);
+        if (svc.processingTime) {
+          sections.push(`The administrative processing time for this service is approximately ${svc.processingTime}. This estimate depends on the completeness of your application and current government turnaround times.`);
+          sections.push(``);
+        }
+        const reqsPart = svc.requirements.join(", ").replace(/, ([^,]*)$/, " and $1");
+        sections.push(`To proceed with this service, you must ensure you have all necessary documentation. Key requirements include ${reqsPart}. These items are essential for a successful submission.`);
         sections.push(``);
         sections.push(`**Sources:**`);
         const reqLinks = [...(svc.officialLinks || []), ...(svc.documentLinks || [])].slice(0, 6);
@@ -370,7 +376,9 @@ server.tool(
         sections.push(`**BLOB ${blobCount++}: Official Links & Actions**`);
         sections.push(``);
         const linksText = actionLinks.map((a: any) => `${a.label} (${a.url})`).join(", ");
-        sections.push(`You can take official actions through these portals: ${linksText}.`);
+        sections.push(`You can take official actions through these dedicated portals: ${linksText}. These gateways are authorized for online applications, status tracking, and document verification.`);
+        sections.push(``);
+        sections.push(`Ensure you are using the correct portal for your specific regional or service-specific needs to avoid delays.`);
         sections.push(``);
         sections.push(`**Sources:**`);
         sections.push(actionLinks.map((a: any) => a.url).join(", "));
@@ -383,12 +391,17 @@ server.tool(
       if (topVideos.length > 0) {
         sections.push(`**BLOB ${blobCount++}: Related Educational Content (YouTube)**`);
         sections.push(``);
-        const videoSummary = topVideos.map((v: any) => {
-          const comments = (v.topComments || []).slice(0, 2).map((c: any) => `"${c.text.slice(0, 50)}..."`).join(" and ");
-          return `${v.title} (${comments ? `noted for feedback like ${comments}` : "informative content"})`;
-        }).join("; ");
-        sections.push(`Key educational resources include: ${videoSummary}. These videos provide visual guides and community discussions regarding the service.`);
+        const videoTitles = topVideos.map((v: any) => v.title).join(", ");
+        sections.push(`We have identified several educational resources on YouTube, including: ${videoTitles}. These videos provide visual walkthroughs and step-by-step guidance for this government service.`);
         sections.push(``);
+        const feedbackNarrative = topVideos.map((v: any) => {
+          const comments = (v.topComments || []).slice(0, 2).map((c: any) => `"${c.text.slice(0, 60)}..."`).join(" and ");
+          return comments ? `For ${v.title}, users have commented ${comments}` : null;
+        }).filter(Boolean).join(". ");
+        if (feedbackNarrative) {
+          sections.push(`Community feedback highlight common experiences and tips. ${feedbackNarrative}. This collective input offers practical insights beyond the official documentation.`);
+          sections.push(``);
+        }
         sections.push(`**Sources:**`);
         sections.push(topVideos.map((v: any) => v.url).join(", "));
         sections.push(``);
@@ -401,7 +414,9 @@ server.tool(
         sections.push(`**BLOB ${blobCount++}: Community Discussion (Twitter/X)**`);
         sections.push(``);
         const tweetNarrative = topTweets.map((t: any) => t.title.substring(0, 100)).join("; ");
-        sections.push(`Public discourse on Twitter reveals several key points of interest: ${tweetNarrative}. These snippets reflect recent community sentiment and queries.`);
+        sections.push(`Public discourse on Twitter reveals several key points of interest: ${tweetNarrative}. These snippets reflect recent community sentiment and queries regarding the service.`);
+        sections.push(``);
+        sections.push(`Real-time updates and discussions on social media can often provide the latest tips or help with common troubleshooting issues reported by other citizens.`);
         sections.push(``);
         sections.push(`**Sources:**`);
         sections.push(topTweets.map((t: any) => t.url).join(", "));
@@ -415,6 +430,8 @@ server.tool(
         sections.push(`**BLOB ${blobCount++}: Key Insights**`);
         sections.push(``);
         sections.push(`The primary insights gathered from our research suggest that ${topKeyPoints.map((kp: any) => kp.text).join(", ").replace(/, ([^,]*)$/, " and $1")}. These points are critical for understanding the current landscape of this service.`);
+        sections.push(``);
+        sections.push(`Understanding these high-level takeaways will help you navigate the process more efficiently and avoid common pitfalls noted by others.`);
         sections.push(``);
         sections.push(`**Sources:**`);
         const insightLinks = [...(result.governmentService?.officialLinks || []), ...topResources.map((r: any) => r.url)].slice(0, 4);
@@ -432,7 +449,10 @@ server.tool(
       if (topActions.length > 0) {
         sections.push(`**BLOB ${blobCount++}: Recommended Next Steps**`);
         sections.push(``);
-        sections.push(`To proceed, it is recommended that you ${topActions.join(", ").replace(/, ([^,]*)$/, " and finally $1")}. Following these steps will ensure a smoother application or inquiry process.`);
+        const actionsPart = topActions.join(", ").replace(/, ([^,]*)$/, " and finally $1");
+        sections.push(`To proceed, it is recommended that you ${actionsPart}. Following these steps will ensure a smoother application or inquiry process based on current best practices.`);
+        sections.push(``);
+        sections.push(`We advise strictly following the official portals for all sensitive data submissions to ensure security and validity.`);
         sections.push(``);
         sections.push(`**Sources:**`);
         if (actionLinks.length > 0) {
