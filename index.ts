@@ -272,20 +272,37 @@ server.tool(
  * Searches only India-specific content and resources
  * Provides structured insights for ChatGPT to compose helpful responses
  */
-const SOURCE_FORMAT_INSTRUCTIONS = `Analyze the retrieved data and produce one or more BLOB sections.
-    
-    Each section MUST follow this EXACT format:
-    
+const SOURCE_FORMAT_INSTRUCTIONS = `You are a detailed research assistant specializing in Indian government services. Analyze the retrieved data and produce a comprehensive, in-depth response of at least 600 words.
+
+    Structure your response as multiple BLOB sections. Each section MUST have:
+    1. A bold header: **BLOB X: Descriptive Section Title**
+    2. Multiple detailed paragraphs (at least 2-3 paragraphs per section) explaining the topic thoroughly — cover what, why, how, tips, warnings, fees, timelines, and real citizen experiences
+    3. A **Sources:** block with bulleted URLs
+
+    EXACT format for each section:
+
     **BLOB X: Section Title**
-    [The retrieved information goes here]
-    
+
+    [Detailed paragraph 1 — thorough explanation of this aspect]
+
+    [Detailed paragraph 2 — additional context, process steps, fees, timelines, or tips]
+
+    [Detailed paragraph 3 — community feedback, warnings, or real-world experiences]
+
     **Sources:**
     * <Source URL 1>
     * <Source URL 2>
-    
+    * <Source URL 3>
+
     ---
-    
-    (Note: Use '---' to separate multiple BLOB sections. Use '*' for bullets. Use bolding exactly as shown.)`;
+
+    CRITICAL RULES:
+    - Write in flowing paragraphs, NOT bullet points for content
+    - Each section must have substantial detail (not one-liners)
+    - Use '*' for source bullets
+    - Use '---' to separate BLOB sections
+    - Total response must exceed 600 words
+    - Only use URLs from the retrieved data — never fabricate URLs`;
 
 server.tool(
   {
@@ -328,19 +345,19 @@ server.tool(
       // Section: About This Service
       if (result.governmentService) {
         const svc = result.governmentService;
-        sections.push(`**BLOB ${blobCount++}: Information Hub — ${svc.name}**`);
+        sections.push(`**BLOB ${blobCount++}: ${svc.name} — What It Is & Who It Serves**`);
         sections.push(``);
-        sections.push(svc.description);
+        sections.push(`${svc.description} This is an essential government service that citizens frequently need to access for official documentation, compliance, or personal administrative needs. Understanding how this service works, who provides it, and what is required will save you considerable time and effort.`);
         sections.push(``);
         if (svc.category || svc.state) {
-          sections.push(`This service is categorized under ${svc.category || "General Government"}.${svc.state ? ` It is specifically managed by or intended for residents of the state of ${svc.state}.` : " it serves a broad jurisdictional area."}`);
+          sections.push(`This service falls under the ${svc.category || "General Government"} category${svc.state ? ` and is specifically administered by the state of ${svc.state}` : ""}. It is important to note that while the broad framework may be set by central government guidelines, the actual implementation, fee structure, and processing timelines can vary significantly depending on your local Regional Transport Office (RTO), District Collector office, or the specific department handling your application. Always verify the latest rules with your local authority before proceeding.`);
           sections.push(``);
         }
         sections.push(`**Sources:**`);
         if (svc.officialLinks.length > 0) {
-          sections.push(svc.officialLinks.join(", "));
+          svc.officialLinks.forEach((link: string) => sections.push(`* ${link}`));
         } else {
-          sections.push(`Information from government service records`);
+          sections.push(`* Information from government service records`);
         }
         sections.push(``);
         sections.push(`---`);
@@ -350,21 +367,22 @@ server.tool(
       // Section: Requirements
       if (result.governmentService && result.governmentService.requirements.length > 0) {
         const svc = result.governmentService;
-        sections.push(`**BLOB ${blobCount++}: Requirements & Process**`);
+        sections.push(`**BLOB ${blobCount++}: Official Process & Requirements (Step-by-Step)**`);
         sections.push(``);
         if (svc.processingTime) {
-          sections.push(`The administrative processing time for this service is approximately ${svc.processingTime}. This estimate depends on the completeness of your application and current government turnaround times.`);
+          sections.push(`The official processing time for this service is approximately ${svc.processingTime}. However, this is an estimate and actual turnaround times may vary depending on the volume of applications at your local office, the completeness of your submitted documents, and whether any verification or physical visit is required. It is advisable to apply well in advance of any deadline you may have.`);
           sections.push(``);
         }
-        const reqsPart = svc.requirements.join(", ").replace(/, ([^,]*)$/, " and $1");
-        sections.push(`To proceed with this service, you must ensure you have all necessary documentation. Key requirements include ${reqsPart}. These items are essential for a successful submission.`);
+        sections.push(`To successfully complete this process, you will need to gather the following documents and meet these requirements: ${svc.requirements.join(", ").replace(/, ([^,]*)$/, " and $1")}. Each of these items plays a critical role in verifying your identity, eligibility, and the legitimacy of your application. Missing even one document can result in delays or outright rejection of your application.`);
+        sections.push(``);
+        sections.push(`It is strongly recommended that you carry both original documents and photocopies (self-attested where required). Many government offices also now accept digitally signed documents via DigiLocker. Before visiting any office, check if an online application or appointment booking is available — this can significantly reduce waiting times and ensure your slot is confirmed.`);
         sections.push(``);
         sections.push(`**Sources:**`);
         const reqLinks = [...(svc.officialLinks || []), ...(svc.documentLinks || [])].slice(0, 6);
         if (reqLinks.length > 0) {
-          sections.push(reqLinks.join(", "));
+          reqLinks.forEach((link: string) => sections.push(`* ${link}`));
         } else {
-          sections.push(`Process requirements from official documentation`);
+          sections.push(`* Process requirements from official documentation`);
         }
         sections.push(``);
         sections.push(`---`);
@@ -373,37 +391,50 @@ server.tool(
 
       // Section: Official Action Links
       if (actionLinks.length > 0) {
-        sections.push(`**BLOB ${blobCount++}: Official Links & Actions**`);
+        sections.push(`**BLOB ${blobCount++}: Official Portals & How to Use Them**`);
         sections.push(``);
-        const linksText = actionLinks.map((a: any) => `${a.label} (${a.url})`).join(", ");
-        sections.push(`You can take official actions through these dedicated portals: ${linksText}. These gateways are authorized for online applications, status tracking, and document verification.`);
+        const linksText = actionLinks.map((a: any) => `${a.label} (${a.url})`).join("; ");
+        sections.push(`The Indian government has established several dedicated online portals for this service. You can access the following platforms: ${linksText}. These portals are the only officially authorized gateways for submitting applications, tracking your application status, downloading certificates, and filing grievances.`);
         sections.push(``);
-        sections.push(`Ensure you are using the correct portal for your specific regional or service-specific needs to avoid delays.`);
+        sections.push(`When using these portals, ensure you are on the correct website by verifying the domain (typically ending in .gov.in or .nic.in). Beware of third-party websites that may charge extra fees or collect your personal data without authorization. Always use the official portal for payments, and keep screenshots or transaction IDs of all online payments for your records. If you face technical issues, most portals offer a helpline number or a grievance section where you can report problems.`);
         sections.push(``);
         sections.push(`**Sources:**`);
-        sections.push(actionLinks.map((a: any) => a.url).join(", "));
+        actionLinks.forEach((a: any) => sections.push(`* ${a.url}`));
         sections.push(``);
         sections.push(`---`);
         sections.push(``);
       }
 
-      // Section: YouTube Videos
+      // Section: YouTube Videos — now uses LLM summaries for detailed content
       if (topVideos.length > 0) {
-        sections.push(`**BLOB ${blobCount++}: Related Educational Content (YouTube)**`);
+        sections.push(`**BLOB ${blobCount++}: Detailed Guides & Community Experiences (YouTube)**`);
         sections.push(``);
-        const videoTitles = topVideos.map((v: any) => v.title).join(", ");
-        sections.push(`We have identified several educational resources on YouTube, including: ${videoTitles}. These videos provide visual walkthroughs and step-by-step guidance for this government service.`);
+        const videoTitles = topVideos.map((v: any) => `"${v.title}"`).join(", ");
+        sections.push(`Our research identified several highly relevant educational videos on YouTube that walk through this process in detail. The key resources include ${videoTitles}. These videos are created by a mix of official channels, experienced content creators, and citizens who have personally gone through the process, offering both official guidance and practical, on-the-ground advice.`);
         sections.push(``);
-        const feedbackNarrative = topVideos.map((v: any) => {
-          const comments = (v.topComments || []).slice(0, 2).map((c: any) => `"${c.text.slice(0, 60)}..."`).join(" and ");
-          return comments ? `For ${v.title}, users have commented ${comments}` : null;
-        }).filter(Boolean).join(". ");
-        if (feedbackNarrative) {
-          sections.push(`Community feedback highlight common experiences and tips. ${feedbackNarrative}. This collective input offers practical insights beyond the official documentation.`);
-          sections.push(``);
+        // Include LLM-generated detailed summaries for each video
+        for (const v of topVideos) {
+          if (v.summary && v.summary.trim().length > 30) {
+            sections.push(v.summary.trim());
+            sections.push(``);
+          }
         }
+        // If no LLM summaries, provide manual feedback narrative
+        const hasSummaries = topVideos.some((v: any) => v.summary && v.summary.trim().length > 30);
+        if (!hasSummaries) {
+          const feedbackNarrative = topVideos.map((v: any) => {
+            const comments = (v.topComments || []).slice(0, 3).map((c: any) => `"${String(c.text).replace(/\s+/g, " ").slice(0, 120)}"`).join(", ");
+            return comments ? `In the video "${v.title}", viewers have shared their experiences: ${comments}. These firsthand accounts reveal the practical challenges and successes that applicants face during this process` : null;
+          }).filter(Boolean).join(". ");
+          if (feedbackNarrative) {
+            sections.push(`${feedbackNarrative}.`);
+            sections.push(``);
+          }
+        }
+        sections.push(`The community feedback on these videos is invaluable — it often reveals tips that official documentation does not cover, such as which counter to go to, what time to arrive to avoid queues, or how to handle common rejection reasons. Always cross-reference video advice with the official portal for the most current rules.`);
+        sections.push(``);
         sections.push(`**Sources:**`);
-        sections.push(topVideos.map((v: any) => v.url).join(", "));
+        topVideos.forEach((v: any) => sections.push(`* ${v.url}`));
         sections.push(``);
         sections.push(`---`);
         sections.push(``);
@@ -411,15 +442,15 @@ server.tool(
 
       // Section: Twitter/X
       if (topTweets.length > 0) {
-        sections.push(`**BLOB ${blobCount++}: Community Discussion (Twitter/X)**`);
+        sections.push(`**BLOB ${blobCount++}: Public Discourse & Real-Time Citizen Feedback (Twitter/X)**`);
         sections.push(``);
-        const tweetNarrative = topTweets.map((t: any) => t.title.substring(0, 100)).join("; ");
-        sections.push(`Public discourse on Twitter reveals several key points of interest: ${tweetNarrative}. These snippets reflect recent community sentiment and queries regarding the service.`);
+        const tweetNarrative = topTweets.map((t: any) => `"${t.title.substring(0, 120)}"`).join("; ");
+        sections.push(`Public discourse on Twitter/X reveals several key points of interest from citizens who have recently interacted with this service. Notable discussions include: ${tweetNarrative}. These snippets reflect the most recent community sentiment, common questions, and real-time issues that applicants are facing.`);
         sections.push(``);
-        sections.push(`Real-time updates and discussions on social media can often provide the latest tips or help with common troubleshooting issues reported by other citizens.`);
+        sections.push(`Social media discussions are particularly valuable because they capture issues that may not yet be reflected in official documentation — such as temporary website outages, changes in fee structure, new document requirements, or office-specific quirks. However, always verify any claims made on social media against the official government portal before acting on them, as misinformation can also spread quickly.`);
         sections.push(``);
         sections.push(`**Sources:**`);
-        sections.push(topTweets.map((t: any) => t.url).join(", "));
+        topTweets.forEach((t: any) => sections.push(`* ${t.url}`));
         sections.push(``);
         sections.push(`---`);
         sections.push(``);
@@ -427,18 +458,18 @@ server.tool(
 
       // Section: Key Insights
       if (topKeyPoints.length > 0) {
-        sections.push(`**BLOB ${blobCount++}: Key Insights**`);
+        sections.push(`**BLOB ${blobCount++}: Key Insights & Analysis**`);
         sections.push(``);
-        sections.push(`The primary insights gathered from our research suggest that ${topKeyPoints.map((kp: any) => kp.text).join(", ").replace(/, ([^,]*)$/, " and $1")}. These points are critical for understanding the current landscape of this service.`);
+        sections.push(`After analyzing all available data from official sources, YouTube content creators, and community discussions, the primary insights are as follows: ${topKeyPoints.map((kp: any) => kp.text).join(", ").replace(/, ([^,]*)$/, " and $1")}. These points represent the most frequently mentioned and highest-confidence findings from our research.`);
         sections.push(``);
-        sections.push(`Understanding these high-level takeaways will help you navigate the process more efficiently and avoid common pitfalls noted by others.`);
+        sections.push(`Understanding these high-level takeaways is crucial for anyone navigating this government service. They highlight the most common pain points, the steps where applicants typically get stuck, and the areas where preparation pays off the most. By being aware of these insights before you begin the process, you can avoid the most common mistakes and delays that other citizens have reported.`);
         sections.push(``);
         sections.push(`**Sources:**`);
-        const insightLinks = [...(result.governmentService?.officialLinks || []), ...topResources.map((r: any) => r.url)].slice(0, 4);
+        const insightLinks = [...(result.governmentService?.officialLinks || []), ...topResources.map((r: any) => r.url)].slice(0, 6);
         if (insightLinks.length > 0) {
-          sections.push(insightLinks.join(", "));
+          insightLinks.forEach((link: string) => sections.push(`* ${link}`));
         } else {
-          sections.push(`Information synthesized from research data`);
+          sections.push(`* Information synthesized from research data`);
         }
         sections.push(``);
         sections.push(`---`);
@@ -449,16 +480,16 @@ server.tool(
       if (topActions.length > 0) {
         sections.push(`**BLOB ${blobCount++}: Recommended Next Steps**`);
         sections.push(``);
-        const actionsPart = topActions.join(", ").replace(/, ([^,]*)$/, " and finally $1");
-        sections.push(`To proceed, it is recommended that you ${actionsPart}. Following these steps will ensure a smoother application or inquiry process based on current best practices.`);
+        const actionsPart = topActions.join("; ").replace(/; ([^;]*)$/, "; and finally $1");
+        sections.push(`Based on our comprehensive research, the recommended course of action is as follows: ${actionsPart}. Following these steps in order will give you the best chance of a smooth and successful outcome. Skipping steps or submitting incomplete documentation is the most common cause of delays reported by other applicants.`);
         sections.push(``);
-        sections.push(`We advise strictly following the official portals for all sensitive data submissions to ensure security and validity.`);
+        sections.push(`We strongly advise using only the official government portals for all document submissions and fee payments. Third-party agents or websites may charge inflated fees and cannot guarantee the validity of the documents they produce. If you encounter any difficulties during the process, most government offices have a public grievance cell or a Sakala-type service guarantee system where you can escalate your issue.`);
         sections.push(``);
         sections.push(`**Sources:**`);
         if (actionLinks.length > 0) {
-          sections.push(actionLinks.slice(0, 4).map((a: any) => a.url).join(", "));
+          actionLinks.slice(0, 4).forEach((a: any) => sections.push(`* ${a.url}`));
         } else {
-          sections.push(`Process steps derived from official procedures`);
+          sections.push(`* Process steps derived from official procedures`);
         }
         sections.push(``);
         sections.push(`---`);

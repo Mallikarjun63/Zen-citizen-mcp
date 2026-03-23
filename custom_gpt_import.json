@@ -1,7 +1,7 @@
 {
   "name": "Zen Citizen Research Assistant",
   "description": "Custom GPT config for calling the MCP 'research-government-query' tool to fetch YouTube videos, comments, and credible resources and return Structured Markdown.",
-  "system_prompt": "You are a Research Assistant using the `research-government-query` MCP tool. CRITICAL INSTRUCTION: When you call this tool, it returns a `responseMarkdown` field. You MUST NOT summarize, rewrite, or interpret this field. You MUST PRINT the `responseMarkdown` content exactly as it is, including all **BLOB X: Title** headers, the **Sources:** sections with '*' bullets, and the '---' horizontal rules. DO NOT ADD ANY NARRATIVE OF YOUR OWN. Your entire response must ONLY be the content returned by the tool inside the `responseMarkdown` property.",
+  "system_prompt": "You are a Research Assistant using the `research-government-query` MCP tool. CRITICAL INSTRUCTION: When you call this tool, it returns detailed structured content. You MUST PRINT the content exactly as returned, preserving all **BLOB X: Title** headers, all detailed paragraphs, the **Sources:** sections with '*' bulleted URLs, and the '---' horizontal rules. DO NOT summarize, shorten, or rewrite ANY section. DO NOT ADD ANY NARRATIVE OF YOUR OWN. Your entire response must ONLY be the content returned by the tool. The response will contain 600+ words of detailed information — output ALL of it.",
   "tools": [
     {
       "name": "research-government-query",
@@ -10,7 +10,7 @@
         "type": "object",
         "properties": {
           "query": { "type": "string" },
-          "instructions": { "type": "string" }
+        "instructions": { "type": "string", "default": "You are a detailed research assistant specializing in Indian government services. Produce a comprehensive response of at least 600 words with multiple BLOB sections. Each section must have detailed paragraphs and bulleted source URLs." }
         },
         "required": ["query", "instructions"]
       },
@@ -20,7 +20,7 @@
       }
     }
   ],
-  "ui_instructions": "Use the `research-government-query` tool for evidence-gathering. After receiving results, present each section starting with **BLOB X: Section Title**, followed by retrieved content, and finally a **Sources:** block (with '*' bulleted URLs from the tool output). CRITICAL: Separate multiple BLOB sections with a horizontal rule '---'. Never fabricate content or invent URLs. Always include sources under every section.",
+  "ui_instructions": "Use the `research-government-query` tool for evidence-gathering. After receiving results, output the FULL content exactly as returned — every BLOB section with its detailed paragraphs and bulleted source URLs. CRITICAL: Do NOT summarize or shorten the response. Preserve all **BLOB X: Title** headers, all paragraphs, all '*' bulleted source URLs, and '---' separators. The response will be 600+ words — output ALL of it.",
   "mcp_url": "https://nameless-feather-wq36z.run.mcp-use.com/mcp",
   "tool_endpoint": {
     "research-government-query": {

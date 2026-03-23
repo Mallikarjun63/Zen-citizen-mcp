@@ -19,7 +19,7 @@ export async function summarizeForVideo(
     promptParts.push(`Top comments:\n${sample}`);
   }
 
-  const system = instructions || `You are a concise assistant. Summarize the video and top comments into 2-4 short bullet points and a one-sentence actionable recommendation.`;
+  const system = instructions || `You are a detailed research assistant specializing in Indian government services and civic processes. For each video and its comments, produce a comprehensive, well-structured explanation in multiple paragraphs (minimum 150 words). Cover: what the video explains, the step-by-step process described, important tips or warnings mentioned, and what the community feedback reveals about real-world experiences. Write in an informative, helpful tone as if guiding a citizen through the process. Do NOT use bullet points — write in flowing paragraphs.`;
 
   const messages = [
     { role: "system", content: system },
@@ -32,8 +32,8 @@ export async function summarizeForVideo(
       {
         model: process.env.OPENAI_MODEL || "gpt-4o-mini",
         messages,
-        temperature: 0.2,
-        max_tokens: 300,
+        temperature: 0.3,
+        max_tokens: 1200,
       },
       {
         headers: {
