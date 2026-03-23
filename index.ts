@@ -328,14 +328,16 @@ server.tool(
       // Section: About This Service
       if (result.governmentService) {
         const svc = result.governmentService;
-        sections.push(`**BLOB ${blobCount++}: About This Service — ${svc.name}**`);
+        sections.push(`**BLOB ${blobCount++}: Information Hub — ${svc.name}**`);
         sections.push(``);
-        sections.push(svc.description);
-        if (svc.category) sections.push(`Category: ${svc.category}${svc.state ? ` | State: ${svc.state}` : ``}`);
+        const categoryPart = svc.category ? ` This service is categorized under ${svc.category}${svc.state ? ` and is specifically for the state of ${svc.state}` : ""}.` : "";
+        sections.push(`${svc.description}${categoryPart}`);
         sections.push(``);
+        sections.push(`**Sources:**`);
         if (svc.officialLinks.length > 0) {
-          sections.push(`**Sources:**`);
-          svc.officialLinks.forEach((link: string) => sections.push(`* ${link}`));
+          sections.push(svc.officialLinks.join(", "));
+        } else {
+          sections.push(`Information from government service records`);
         }
         sections.push(``);
         sections.push(`---`);
@@ -347,13 +349,16 @@ server.tool(
         const svc = result.governmentService;
         sections.push(`**BLOB ${blobCount++}: Requirements & Process**`);
         sections.push(``);
-        if (svc.processingTime) sections.push(`Processing Time: ${svc.processingTime}`);
-        svc.requirements.forEach((req: string) => sections.push(`* ${req}`));
+        const processPart = svc.processingTime ? ` The estimated processing time for this service is ${svc.processingTime}.` : "";
+        const reqsPart = ` The requirements include ${svc.requirements.join(", ").replace(/, ([^,]*)$/, " and $1")}.`;
+        sections.push(`To complete this process, you must meet several requirements.${processPart}${reqsPart}`);
         sections.push(``);
+        sections.push(`**Sources:**`);
         const reqLinks = [...(svc.officialLinks || []), ...(svc.documentLinks || [])].slice(0, 6);
         if (reqLinks.length > 0) {
-          sections.push(`**Sources:**`);
-          reqLinks.forEach((link: string) => sections.push(`* ${link}`));
+          sections.push(reqLinks.join(", "));
+        } else {
+          sections.push(`Process requirements from official documentation`);
         }
         sections.push(``);
         sections.push(`---`);
@@ -362,12 +367,13 @@ server.tool(
 
       // Section: Official Action Links
       if (actionLinks.length > 0) {
-        sections.push(`**BLOB ${blobCount++}: Official Links**`);
+        sections.push(`**BLOB ${blobCount++}: Official Links & Actions**`);
         sections.push(``);
-        actionLinks.forEach((a: any) => sections.push(`- ${a.label}: ${a.url}`));
+        const linksText = actionLinks.map((a: any) => `${a.label} (${a.url})`).join(", ");
+        sections.push(`You can take official actions through these portals: ${linksText}.`);
         sections.push(``);
         sections.push(`**Sources:**`);
-        actionLinks.forEach((a: any) => sections.push(`* ${a.url}`));
+        sections.push(actionLinks.map((a: any) => a.url).join(", "));
         sections.push(``);
         sections.push(`---`);
         sections.push(``);
@@ -375,16 +381,16 @@ server.tool(
 
       // Section: YouTube Videos
       if (topVideos.length > 0) {
-        sections.push(`**BLOB ${blobCount++}: Related YouTube Videos**`);
+        sections.push(`**BLOB ${blobCount++}: Related Educational Content (YouTube)**`);
         sections.push(``);
-        topVideos.forEach((v: any, i: number) => {
-          sections.push(`${i + 1}. ${v.title}`);
-          const comments = (v.topComments || []).slice(0, 2);
-          comments.forEach((c: any) => sections.push(`   - "${String(c.text).replace(/\s+/g, " ").slice(0, 160)}" (${c.likes} likes)`));
-        });
+        const videoSummary = topVideos.map((v: any) => {
+          const comments = (v.topComments || []).slice(0, 2).map((c: any) => `"${c.text.slice(0, 50)}..."`).join(" and ");
+          return `${v.title} (${comments ? `noted for feedback like ${comments}` : "informative content"})`;
+        }).join("; ");
+        sections.push(`Key educational resources include: ${videoSummary}. These videos provide visual guides and community discussions regarding the service.`);
         sections.push(``);
         sections.push(`**Sources:**`);
-        topVideos.forEach((v: any) => sections.push(`* ${v.url}`));
+        sections.push(topVideos.map((v: any) => v.url).join(", "));
         sections.push(``);
         sections.push(`---`);
         sections.push(``);
@@ -394,10 +400,11 @@ server.tool(
       if (topTweets.length > 0) {
         sections.push(`**BLOB ${blobCount++}: Community Discussion (Twitter/X)**`);
         sections.push(``);
-        topTweets.forEach((t: any, i: number) => sections.push(`${i + 1}. ${t.title.substring(0, 140)}`));
+        const tweetNarrative = topTweets.map((t: any) => t.title.substring(0, 100)).join("; ");
+        sections.push(`Public discourse on Twitter reveals several key points of interest: ${tweetNarrative}. These snippets reflect recent community sentiment and queries.`);
         sections.push(``);
         sections.push(`**Sources:**`);
-        topTweets.forEach((t: any) => sections.push(`* ${t.url}`));
+        sections.push(topTweets.map((t: any) => t.url).join(", "));
         sections.push(``);
         sections.push(`---`);
         sections.push(``);
@@ -407,7 +414,15 @@ server.tool(
       if (topKeyPoints.length > 0) {
         sections.push(`**BLOB ${blobCount++}: Key Insights**`);
         sections.push(``);
-        topKeyPoints.forEach((kp: any) => sections.push(`* ${kp.text}`));
+        sections.push(`The primary insights gathered from our research suggest that ${topKeyPoints.map((kp: any) => kp.text).join(", ").replace(/, ([^,]*)$/, " and $1")}. These points are critical for understanding the current landscape of this service.`);
+        sections.push(``);
+        sections.push(`**Sources:**`);
+        const insightLinks = [...(result.governmentService?.officialLinks || []), ...topResources.map((r: any) => r.url)].slice(0, 4);
+        if (insightLinks.length > 0) {
+          sections.push(insightLinks.join(", "));
+        } else {
+          sections.push(`Information synthesized from research data`);
+        }
         sections.push(``);
         sections.push(`---`);
         sections.push(``);
@@ -417,11 +432,13 @@ server.tool(
       if (topActions.length > 0) {
         sections.push(`**BLOB ${blobCount++}: Recommended Next Steps**`);
         sections.push(``);
-        topActions.forEach((a: string, i: number) => sections.push(`${i + 1}. ${a}`));
+        sections.push(`To proceed, it is recommended that you ${topActions.join(", ").replace(/, ([^,]*)$/, " and finally $1")}. Following these steps will ensure a smoother application or inquiry process.`);
         sections.push(``);
+        sections.push(`**Sources:**`);
         if (actionLinks.length > 0) {
-          sections.push(`**Sources:**`);
-          actionLinks.slice(0, 4).forEach((a: any) => sections.push(`* ${a.url}`));
+          sections.push(actionLinks.slice(0, 4).map((a: any) => a.url).join(", "));
+        } else {
+          sections.push(`Process steps derived from official procedures`);
         }
         sections.push(``);
         sections.push(`---`);
